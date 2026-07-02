@@ -555,13 +555,13 @@ class Selecao extends Model
                 "order": 27
             },
             "declaro_concordo_termos": {
-                "label": "Declaro estar ciente e concordo com os <a href=\"#\">termos de inscrição no Programa de Pós-Graduação do(a) {{NOME UNIDADE}}</a>",
+                "label": "Declaro estar ciente e concordo com os <a href=\"{{UNIDADE_LINK_INSCRICAO_TERMOS}}\">termos de inscrição no Programa de Pós-Graduação d{{UNIDADE_GENERO}} {{UNIDADE_NOME}}</a>",
                 "type": "checkbox",
                 "validate": "required",
                 "order": 28
             },
             "declaro_revisei_inscricao": {
-                "label": "Declaro que revisei todas as informações inseridas neste formulário e que elas estão corretas, e venho requerer minha inscrição como candidato(a) à vaga no Programa de Pós-Graduação no(a) {{NOME UNIDADE}}",
+                "label": "Declaro que revisei todas as informações inseridas neste formulário e que elas estão corretas, e venho requerer minha inscrição como candidato(a) à vaga no Programa de Pós-Graduação n{{UNIDADE_GENERO}} {{UNIDADE_NOME}}",
                 "type": "checkbox",
                 "validate": "required",
                 "order": 29
@@ -999,16 +999,27 @@ class Selecao extends Model
         $this->injetarUnidadeNoTemplate();
     }
 
-    // como o template é protegido, precisamos de um método para inserir o nome da unidade
+    // como o template é protegido, precisamos de um método para inserir os termos variáveis da unidade
     private function injetarUnidadeNoTemplate()
     {
-        if (empty($this->attributes['template'])) return;
-
-        $unidade = Estrutura::obterUnidade(config('senhaunica.codigoUnidade'))['nomund'] ?? 'Unidade';
+        if (empty($this->attributes['template']))
+            return;
 
         $this->attributes['template'] = str_replace(
-            '{{NOME UNIDADE}}',
-            $unidade,
+            '{{UNIDADE_LINK_INSCRICAO_TERMOS}}',
+            Parametro::first()->link_inscricao_termos ?? '#',
+            $this->attributes['template']
+        );
+
+        $this->attributes['template'] = str_replace(
+            '{{UNIDADE_GENERO}}',
+            Estrutura::obterUnidade(config('senhaunica.codigoUnidade'))['artttm'] ?? 'o(a)',
+            $this->attributes['template']
+        );
+
+        $this->attributes['template'] = str_replace(
+            '{{UNIDADE_NOME}}',
+            Estrutura::obterUnidade(config('senhaunica.codigoUnidade'))['nomund'] ?? 'Unidade',
             $this->attributes['template']
         );
     }

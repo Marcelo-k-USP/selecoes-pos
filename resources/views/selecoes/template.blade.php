@@ -15,7 +15,7 @@
           <div class="card-header">
             <div class="card-title form-inline my-0">
               Seleções <i class="fas fa-angle-right mx-2"></i>
-              <a href="selecoes/edit/{{ $selecao->id }}">{{ $selecao->nome }}</a>
+              <a href="selecoes/edit/{{ $selecao->id }}">Seleção nº {{ $selecao->id }}</a>
               @if (!is_null($selecao->categoria))
                 &nbsp;({{ $selecao->categoria->nome }})
               @endif

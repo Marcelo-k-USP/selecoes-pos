@@ -14,6 +14,7 @@ class Parametro extends Model
         'boleto_codigo_fonte_recurso',
         'boleto_estrutura_hierarquica',
         'boleto_momento_envio',
+        'link_inscricao_termos',
         'link_acompanhamento_especiais',
         'max_disciplinas_aluno_especial',
         'email_servicoposgraduacao',
@@ -37,6 +38,10 @@ class Parametro extends Model
             'label' => 'Momento de Geração e Envio do Boleto',
             'type' => 'radio',
             'data' => ['Envio da Inscrição/Matrícula' => 'Envio da Inscrição/Matrícula', 'Aprovação da Inscrição/Matrícula' => 'Aprovação da Inscrição/Matrícula'],
+        ],
+        [
+            'name' => 'link_inscricao_termos',
+            'label' => 'Link para os Termos de Inscrição',
         ],
         [
             'name' => 'link_acompanhamento_especiais',

@@ -125,18 +125,47 @@ class SelecaoController extends Controller
             $selecao->atualizarStatus();
             $selecao->estado = Selecao::where('id', $selecao->id)->value('estado');
 
-            foreach (MotivoIsencaoTaxa::listarMotivosIsencaoTaxa() as $motivoisencaotaxa)    // cadastra automaticamente todos os motivos de isenção de taxa como possíveis para este processo seletivo
-                $selecao->motivosisencaotaxa()->attach($motivoisencaotaxa);
+            // obtém a última seleção desse programa/aluno especial
+            if ($selecao->categoria->nome != 'Aluno Especial')
+                $queryUltimaSelecao = Selecao::where('programa_id', $selecao->programa_id)->where('id', '!=', $selecao->id);
+            else
+                $queryUltimaSelecao = Selecao::whereRelation('categoria', 'nome', 'Aluno Especial')->where('id', '!=', $selecao->id);
+            $ultimaSelecao = $queryUltimaSelecao->orderBy('id', 'desc')->first();
 
-            foreach (TipoArquivo::where('classe_nome', 'Solicitações de Isenção de Taxa')->get() as $tipoarquivo)    // cadastra automaticamente todos os tipos de arquivo para solicitações de isenção de taxa como possíveis para este processo seletivo
-                $selecao->tiposarquivo()->attach($tipoarquivo);
+            if ($ultimaSelecao) {
+                // herda vários dados da última seleção
+                $selecao->template = $ultimaSelecao->template;
+                $selecao->save();    // necessário devido à linha de cima
+                if ($selecao->categoria->nome != 'Aluno Especial')
+                    $selecao->niveislinhaspesquisa()->sync($ultimaSelecao->niveislinhaspesquisa->pluck('id'));
+                if (!$selecao->isMatricula())
+                    $selecao->tiposarquivo()->sync($ultimaSelecao->tiposarquivo->where('classe_nome', 'Inscrições')->pluck('id'));
+                else
+                    $selecao->tiposarquivo()->sync($ultimaSelecao->tiposarquivo->where('classe_nome', 'Matrículas')->pluck('id'));
+            } else {
+                // cadastra automaticamente todas as instâncias de vários objetos como possíveis para este processo seletivo
+                if ($selecao->categoria->nome != 'Aluno Especial')
+                    $selecao->niveislinhaspesquisa()->attach(NivelLinhaPesquisa::whereRelation('linhapesquisa', 'programa_id', $selecao->programa_id)->pluck('id'));
+                if ($selecao->isMatricula())
+                    $selecao->tiposarquivo()->attach(TipoArquivo::where('classe_nome', 'Inscrições')->whereHas('categorias', function ($query) use ($selecao) { $query->where('nome', $selecao->categoria->nome); })->whereRelation('niveisprogramas', 'programa_id', $selecao->programa_id)->pluck('id'));
+                else
+                    $selecao->tiposarquivo()->attach(TipoArquivo::where('classe_nome', 'Matrículas')->whereHas('categorias', function ($query) use ($selecao) { $query->where('nome', $selecao->categoria->nome); })->pluck('id'));
+            }
 
-            if ($selecao->isMatricula())    // cadastra automaticamente tipos de arquivo para matrículas como possíveis para este processo seletivo
-                foreach (TipoArquivo::where('classe_nome', 'Matrículas')->whereHas('categorias', function ($query) use ($selecao) { $query->where('nome', $selecao->categoria->nome); })->get() as $tipoarquivo)
-                    $selecao->tiposarquivo()->attach($tipoarquivo);
-            else                            // cadastra automaticamente tipos de arquivo para inscrições como possíveis para este processo seletivo
-                foreach (TipoArquivo::where('classe_nome', 'Inscrições')->whereHas('categorias', function ($query) use ($selecao) { $query->where('nome', $selecao->categoria->nome); })->whereRelation('niveisprogramas', 'programa_id', $selecao->programa_id)->get() as $tipoarquivo)
-                    $selecao->tiposarquivo()->attach($tipoarquivo);
+            if ($selecao->tem_taxa) {
+                // obtém a última seleção com taxa desse programa/aluno especial
+                $ultimaSelecaoComTaxa = (clone $queryUltimaSelecao)->where('tem_taxa', true)->orderBy('id', 'desc')->first();
+
+                if ($ultimaSelecaoComTaxa) {
+                    // herda vários dados da última seleção
+                    $selecao->motivosisencaotaxa()->sync($ultimaSelecaoComTaxa->motivosisencaotaxa->pluck('id'));
+                    $selecao->tiposarquivo()->attach($ultimaSelecaoComTaxa->tiposarquivo->where('classe_nome', 'Solicitações de Isenção de Taxa')->pluck('id'));    // trocado sync por attach porque aqui o sync removeria tipos de arquivo já inseridos nas linhas de cima
+                } else {
+                    // cadastra automaticamente todas as instâncias de vários objetos como possíveis para este processo seletivo
+                    $selecao->motivosisencaotaxa()->attach(MotivoIsencaoTaxa::listarMotivosIsencaoTaxa()->pluck('id'));
+                    $selecao->tiposarquivo()->attach(TipoArquivo::where('classe_nome', 'Solicitações de Isenção de Taxa')->pluck('id'));
+                }
+            }
 
             $selecao->reagendarTarefas();
 

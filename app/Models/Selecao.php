@@ -29,10 +29,60 @@ class Selecao extends Model
     ];
 
     # valores default na criação de nova seleção
-    # (o campo template de $attributes contém um modelo padrão para o formulário de inscrição da seleção)
+    # (os campos template_* de $attributes contêm modelos padrão para os formulários de solicitação de isenção de taxa, inscrição e matrícula da seleção)
     protected $attributes = [
         'estado' => 'Em Elaboração',
-        'template' => '{
+        'template_solicitacoesisencaotaxa' => '{
+            "nome": {
+                "label": "Nome",
+                "type": "text",
+                "validate": "required",
+                "order": 0
+            },
+            "tipo_de_documento": {
+                "label": "Tipo de Documento",
+                "type": "select",
+                "value": [
+                {
+                    "label": "RG",
+                    "value": "rg",
+                    "order": 0
+                },
+                {
+                    "label": "RNE",
+                    "value": "rne",
+                    "order": 1
+                },
+                {
+                    "label": "Passaporte",
+                    "value": "passaporte",
+                    "order": 2
+                }
+                ],
+                "help": "Utilize o passaporte apenas se não possuir documento de identidade brasileira (RG)",
+                "validate": "required",
+                "order": 1
+            },
+            "numero_do_documento": {
+                "label": "Número do Documento",
+                "type": "text",
+                "validate": "required",
+                "order": 2
+            },
+            "cpf": {
+                "label": "CPF",
+                "type": "text",
+                "validate": "required",
+                "order": 3
+            },
+            "e_mail": {
+                "label": "E-mail",
+                "type": "email",
+                "validate": "required",
+                "order": 4
+            }
+        }',
+        'template_inscricoes' => '{
             "nome": {
                 "label": "Nome",
                 "type": "text",
@@ -574,6 +624,56 @@ class Selecao extends Model
                 "order": 30
             }
         }',
+        'template_matriculas' => '{
+            "nome": {
+                "label": "Nome",
+                "type": "text",
+                "validate": "required",
+                "order": 0
+            },
+            "tipo_de_documento": {
+                "label": "Tipo de Documento",
+                "type": "select",
+                "value": [
+                {
+                    "label": "RG",
+                    "value": "rg",
+                    "order": 0
+                },
+                {
+                    "label": "RNE",
+                    "value": "rne",
+                    "order": 1
+                },
+                {
+                    "label": "Passaporte",
+                    "value": "passaporte",
+                    "order": 2
+                }
+                ],
+                "help": "Utilize o passaporte apenas se não possuir documento de identidade brasileira (RG)",
+                "validate": "required",
+                "order": 1
+            },
+            "numero_do_documento": {
+                "label": "Número do Documento",
+                "type": "text",
+                "validate": "required",
+                "order": 2
+            },
+            "cpf": {
+                "label": "CPF",
+                "type": "text",
+                "validate": "required",
+                "order": 3
+            },
+            "e_mail": {
+                "label": "E-mail",
+                "type": "email",
+                "validate": "required",
+                "order": 4
+            }
+        }',
     ];
 
     protected $fillable = [
@@ -596,7 +696,9 @@ class Selecao extends Model
         'categoria_id',
         'programa_id',
         'estado',
-        'template',
+        'template_solicitacoesisencaotaxa',
+        'template_inscricoes',
+        'template_matriculas',
     ];
 
     // uso no crud generico
@@ -717,7 +819,7 @@ class Selecao extends Model
 
     /**
      * template
-     * retorna os campos do template do formulario
+     * retorna os campos dos templates dos formulários
      */
     public static function getTemplateFields()
     {
@@ -998,31 +1100,40 @@ class Selecao extends Model
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
-        $this->injetarUnidadeNoTemplate();
+        $this->injetarUnidadeNosTemplates();
     }
 
-    // como o template é protegido, precisamos de um método para inserir os termos variáveis da unidade
-    private function injetarUnidadeNoTemplate()
+    // como os templates são protegidos, precisamos de um método para inserir os termos variáveis da unidade
+    private function injetarUnidadeNosTemplates()
     {
-        if (empty($this->attributes['template']))
+        $this->injetarUnidadeNoTemplate('SolicitacaoIsencaoTaxa');
+        $this->injetarUnidadeNoTemplate('Inscricao');
+        $this->injetarUnidadeNoTemplate('Matricula');
+    }
+
+    private function injetarUnidadeNoTemplate(string $classe_nome)
+    {
+        $template_nome = 'template_' . ClasseUtils::obterClasseNomePlural($classe_nome);
+
+        if (empty($this->attributes[$template_nome]))
             return;
 
-        $this->attributes['template'] = str_replace(
+        $this->attributes[$template_nome] = str_replace(
             '{{UNIDADE_LINK_INSCRICAO_TERMOS}}',
             Parametro::first()->link_inscricao_termos ?? '#',
-            $this->attributes['template']
+            $this->attributes[$template_nome]
         );
 
-        $this->attributes['template'] = str_replace(
+        $this->attributes[$template_nome] = str_replace(
             '{{UNIDADE_GENERO}}',
             Estrutura::obterUnidade(config('senhaunica.codigoUnidade'))['artttm'] ?? 'o(a)',
-            $this->attributes['template']
+            $this->attributes[$template_nome]
         );
 
-        $this->attributes['template'] = str_replace(
+        $this->attributes[$template_nome] = str_replace(
             '{{UNIDADE_NOME}}',
             Estrutura::obterUnidade(config('senhaunica.codigoUnidade'))['nomund'] ?? 'Unidade',
-            $this->attributes['template']
+            $this->attributes[$template_nome]
         );
     }
 

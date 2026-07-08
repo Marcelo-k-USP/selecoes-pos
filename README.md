@@ -19,7 +19,7 @@ O aluno especial, ao se matricular, deve escolher a(s) disciplina(s) na(s) qual(
 A maioria dos programas faz uso do fluxo de inscrições. As matrículas são utilizadas apenas para o caso de aluno especial e, no caso de aluno regular, para programas configurados para atuar com matrículas ao invés de inscrições (por exemplo, programas que realizem os passos anteriores do processo seletivo através da FUVEST e/ou outros e, após isso, necessitem dos dados do candidato).
 
 Os gerentes devem cadastrar as seleções nas quais os candidatos solicitarão isenção de taxa, se inscreverão e se matricularão.
-Cada seleção tem um formulário próprio para preenchimento pelo candidato quando da inscrição/matrícula, gerado a partir de um template, e editável pelo gerente (excetos por campos utilizados pelo sistema, que não podem ser removidos, como CPF, e-mail, etc.).
+Cada seleção pode ter até três formulários para preenchimento pelo candidato (para a solicitação de isenção de taxa, para a inscrição e para a matrícula), gerados a partir de templates, e editáveis pelo gerente (excetos por campos utilizados pelo sistema, que não podem ser removidos, como CPF, e-mail, etc.).
 O estado da seleção é modificado quando o gerente altera a data início/fim das solicitações de isenção de taxa, das inscrições ou das matrículas, também quando as seleções são consultadas (neste momento, o sistema verifica se alguma seleção passou da data início/fim, e muda o estado de acordo), e também quando um usuário vai iniciar uma nova solicitação de isenção de taxa, inscrição ou matrícula.
 O estado da seleção também é modificado quando o gerente sobe ou remove os documentos da seleção (edital, etc.), pois não podemos iniciar um período de solicitações de isenção de taxa, inscrições ou matrículas sem que a seleção tenha esses documentos.
 Ao cadastrar uma nova seleção, o gerente deve informar a quais combinações de níveis com linhas de pesquisa/temas ela está atrelada (se a categoria da seleção for aluno regular, pois na categoria de aluno especial não temos combinações níveis com linhas de pesquisa/temas, o aluno especial se inscreve para disciplinas).
@@ -256,8 +256,6 @@ Para executar este seeder, utilize o comando:
         php artisan db:seed
 
 **Generalização de Unidade no Template:** Para tornar o sistema compatível com diferentes unidades, a model `Selecao` utiliza o método `injetarUnidadeNoTemplate`. Esse método intercepta a criação de uma nova Seleção e substitui automaticamente os textos padrão pelo nome oficial da unidade (obtido dinamicamente via configurações do sistema).
-
-**Configuração de Links Externos:** Nas declarações do template, é necessário incluir o link para a página da unidade que contém os regimentos e termos específicos. Como essa URL varia entre as instituições, ela deve ser conferida e, se necessário, ajustada manualmente ao editar a Seleção após a sua criação.
 
 ### Instalar e configurar o Supervisor
 

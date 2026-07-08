@@ -163,10 +163,12 @@
 
     function updateQuadrosSolicitacoesIsencaoTaxa() {
       if (!$('#tem_taxa').prop('checked')) {
+        $('#card-selecao-formulario-solicitacoesisencaotaxa').hide();
         $('#card-motivosisencaotaxa').hide();
         $('#card-tiposarquivosolicitacaoisencaotaxa').hide();
         $('#card-selecao-solicitacoesisencaotaxa').hide();
       } else {
+        $('#card-selecao-formulario-solicitacoesisencaotaxa').show();
         $('#card-motivosisencaotaxa').show();
         $('#card-tiposarquivosolicitacaoisencaotaxa').show();
         $('#card-selecao-solicitacoesisencaotaxa').show();

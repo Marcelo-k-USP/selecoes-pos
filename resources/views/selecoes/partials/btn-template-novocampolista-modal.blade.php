@@ -14,7 +14,7 @@
       </div>
       <div class="modal-body">
         <div class="list_table_div_form">
-          {{ html()->form('post', route('selecoes.storetemplatevalue', ['selecao' => $selecao->id, 'campo' => $field]))->id('template-form-value')->open() }}
+          {{ html()->form('post', route('selecoes.storetemplatevalue', ['selecao' => $selecao->id, 'classe_nome' => $classe_nome, 'campo' => $field]))->id('template-form-value')->open() }}
             @csrf
             @method('post')
             {{ html()->hidden('id') }}

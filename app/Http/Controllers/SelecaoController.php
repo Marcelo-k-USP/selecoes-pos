@@ -125,6 +125,11 @@ class SelecaoController extends Controller
             $selecao->atualizarStatus();
             $selecao->estado = Selecao::where('id', $selecao->id)->value('estado');
 
+            if (!$selecao->fazInscricoes())
+                $selecao->template_inscricoes = '{}';
+            if (!$selecao->fazMatriculas())
+                $selecao->template_matriculas = '{}';
+
             // obtém a última seleção desse programa/aluno especial
             if ($selecao->categoria->nome != 'Aluno Especial')
                 $queryUltimaSelecao = Selecao::where('programa_id', $selecao->programa_id)->where('id', '!=', $selecao->id);
@@ -134,14 +139,16 @@ class SelecaoController extends Controller
 
             if ($ultimaSelecao) {
                 // herda vários dados da última seleção
-                $selecao->template = $ultimaSelecao->template;
-                $selecao->save();    // necessário devido à linha de cima
                 if ($selecao->categoria->nome != 'Aluno Especial')
                     $selecao->niveislinhaspesquisa()->attach($ultimaSelecao->niveislinhaspesquisa->pluck('id'));
-                if ($selecao->fazInscricoes())
+                if ($selecao->fazInscricoes()) {
+                    $selecao->template_inscricoes = $ultimaSelecao->template_inscricoes;
                     $selecao->tiposarquivo()->attach($ultimaSelecao->tiposarquivo->where('classe_nome', 'Inscrições')->pluck('id'));
-                if ($selecao->fazMatriculas())
+                }
+                if ($selecao->fazMatriculas()) {
+                    $selecao->template_matriculas = $ultimaSelecao->template_matriculas;
                     $selecao->tiposarquivo()->attach($ultimaSelecao->tiposarquivo->where('classe_nome', 'Matrículas')->pluck('id'));
+                }
             } else {
                 // cadastra automaticamente todas as instâncias de vários objetos como possíveis para este processo seletivo
                 if ($selecao->categoria->nome != 'Aluno Especial')
@@ -158,6 +165,7 @@ class SelecaoController extends Controller
 
                 if ($ultimaSelecaoComTaxa) {
                     // herda vários dados da última seleção
+                    $selecao->template_solicitacoesisencaotaxa = $ultimaSelecaoComTaxa->template_solicitacoesisencaotaxa;
                     $selecao->motivosisencaotaxa()->attach($ultimaSelecaoComTaxa->motivosisencaotaxa->pluck('id'));
                     $selecao->tiposarquivo()->attach($ultimaSelecaoComTaxa->tiposarquivo->where('classe_nome', 'Solicitações de Isenção de Taxa')->pluck('id'));
                 } else {
@@ -165,7 +173,9 @@ class SelecaoController extends Controller
                     $selecao->motivosisencaotaxa()->attach(MotivoIsencaoTaxa::listarMotivosIsencaoTaxa()->pluck('id'));
                     $selecao->tiposarquivo()->attach(TipoArquivo::where('classe_nome', 'Solicitações de Isenção de Taxa')->pluck('id'));
                 }
-            }
+            } else
+                $selecao->template_solicitacoesisencaotaxa = '{}';
+            $selecao->save();    // necessário devido às eventuais alterações nos templates acima... se nenhum template tiver sido modificado, o Laravel ignora este comando
 
             $selecao->reagendarTarefas();
 
@@ -304,28 +314,30 @@ class SelecaoController extends Controller
             $selecao->$field = $request->$field;
     }
 
-    public function storeTemplateJson(Request $request, Selecao $selecao)
+    public function storeTemplateJson(Request $request, Selecao $selecao, string $classe_nome)
     {
         Gate::authorize('selecoes.update', $selecao);
 
         \UspTheme::activeUrl('selecoes');
-        $newjson = $request->template;
-        $selecao->template = $newjson;
+        $classe_nome_plural = ClasseUtils::obterClasseNomePlural($classe_nome);
+        $newjson = $request->{'template_' . $classe_nome_plural};
+        $selecao->{'template_' . $classe_nome_plural} = $newjson;
         $selecao->save();
         $request->session()->flash('alert-success', 'Template salvo com sucesso');
         return redirect()->to(url('selecoes/edit/' . $selecao->id))->with($this->monta_compact($selecao, 'edit', 'formulario'));    // se fosse return view, um eventual F5 do usuário duplicaria o registro... POSTs devem ser com redirect
     }
 
-    public function createTemplate(Selecao $selecao)
+    public function createTemplate(Selecao $selecao, string $classe_nome)
     {
         Gate::authorize('selecoes.update', $selecao);
 
         \UspTheme::activeUrl('selecoes');
-        $template = json_decode(JSONForms::orderTemplate($selecao->template), true);
-        return view('selecoes.template', compact('selecao', 'template'));
+        $classe_nome_plural = ClasseUtils::obterClasseNomePlural($classe_nome);
+        $template = json_decode(JSONForms::orderTemplate($selecao->{'template_' . $classe_nome_plural}), true);
+        return view('selecoes.template', compact('selecao', 'classe_nome', 'template'));
     }
 
-    public function storeTemplate(Request $request, Selecao $selecao)
+    public function storeTemplate(Request $request, Selecao $selecao, string $classe_nome)
     {
         Gate::authorize('selecoes.update', $selecao);
 
@@ -339,6 +351,7 @@ class SelecaoController extends Controller
                 'new.type' => 'required',
             ]);
         }
+        $classe_nome_plural = ClasseUtils::obterClasseNomePlural($classe_nome);
         $template = [];
         // remonta $template, considerando apenas o que veio do $request (com isso, atualiza e também apaga)
         if (isset($request->template))
@@ -361,25 +374,26 @@ class SelecaoController extends Controller
             elseif ($template[$request->campo]['type'] == 'select')
                 $template[$request->campo]['value'] = '[]';
         }
-        $selecao->template = JSONForms::fixJson($template);
+        $selecao->{'template_' . $classe_nome_plural} = JSONForms::fixJson($template);
         $selecao->save();
 
         $request->session()->flash('alert-success', 'Formulário salvo com sucesso');
         \UspTheme::activeUrl('selecoes');
-        $template = json_decode(JSONForms::orderTemplate($selecao->template), true);
-        return redirect()->to(url('selecoes/' . $selecao->id . '/template'))->with(compact('selecao', 'template'));    // se fosse return view, um eventual F5 do usuário duplicaria o registro... POSTs devem ser com redirect
+        $template = json_decode(JSONForms::orderTemplate($selecao->{'template_' . $classe_nome_plural}), true);
+        return redirect()->to(url('selecoes/' . $selecao->id . '/' . $classe_nome . '/template'))->with(compact('selecao', 'template'));    // se fosse return view, um eventual F5 do usuário duplicaria o registro... POSTs devem ser com redirect
     }
 
-    public function createTemplateValue(Selecao $selecao, string $field)
+    public function createTemplateValue(Selecao $selecao, string $classe_nome, string $field)
     {
         Gate::authorize('selecoes.update', $selecao);
 
         \UspTheme::activeUrl('selecoes');
-        $template = json_decode(JSONForms::orderTemplate($selecao->template), true);
-        return view('selecoes.templatevalue', compact('selecao', 'template', 'field'));
+        $classe_nome_plural = ClasseUtils::obterClasseNomePlural($classe_nome);
+        $template = json_decode(JSONForms::orderTemplate($selecao->{'template_' . $classe_nome_plural}), true);
+        return view('selecoes.templatevalue', compact('selecao', 'classe_nome', 'template', 'field'));
     }
 
-    public function storeTemplateValue(Request $request, Selecao $selecao, string $field)
+    public function storeTemplateValue(Request $request, Selecao $selecao, string $classe_nome, string $field)
     {
         Gate::authorize('selecoes.update', $selecao);
 
@@ -392,7 +406,8 @@ class SelecaoController extends Controller
                 'new.label' => 'required',
             ]);
         }
-        $template = json_decode($selecao->template);
+        $classe_nome_plural = ClasseUtils::obterClasseNomePlural($classe_nome);
+        $template = json_decode($selecao->{'template_' . $classe_nome_plural});
         $value = [];
         // remonta $value, considerando apenas o que veio do $request (com isso, atualiza e também apaga)
         if (isset($request->value)) {
@@ -411,12 +426,12 @@ class SelecaoController extends Controller
         }
         $template->$field->value = $value;
         $template = json_decode(json_encode($template), true);
-        $selecao->template = JSONForms::fixJson($template, true);
+        $selecao->{'template_' . $classe_nome_plural} = JSONForms::fixJson($template, true);
         $selecao->save();
 
         $request->session()->flash('alert-success', 'Lista salva com sucesso');
         \UspTheme::activeUrl('selecoes');
-        return redirect()->to(url('selecoes/' . $selecao->id . '/templatevalue/' . $field))->with(compact('selecao', 'template', 'field'));    // se fosse return view, um eventual F5 do usuário duplicaria o registro... POSTs devem ser com redirect
+        return redirect()->to(url('selecoes/' . $selecao->id . '/' . $classe_nome . '/templatevalue/' . $field))->with(compact('selecao', 'template', 'field'));    // se fosse return view, um eventual F5 do usuário duplicaria o registro... POSTs devem ser com redirect
     }
 
     /**
@@ -751,7 +766,7 @@ class SelecaoController extends Controller
         $solicitacoesisencaotaxa = SolicitacaoIsencaoTaxa::listarSolicitacoesIsencaoTaxaPorSelecao($selecao, $ano);
 
         // vamos pegar o template da seleção para saber quais são os campos extras
-        $template = json_decode(JSONForms::orderTemplate($selecao->template), true);
+        $template = json_decode(JSONForms::orderTemplate($selecao->template_solicitacoesisencaotaxa), true);
         $keys = array_keys($template);
 
         $arr = [];
@@ -798,7 +813,7 @@ class SelecaoController extends Controller
         $inscricoes = Inscricao::listarInscricoesPorSelecao($selecao, $ano);
 
         // vamos pegar o template da seleção para saber quais são os campos extras
-        $template = json_decode(JSONForms::orderTemplate($selecao->template), true);
+        $template = json_decode(JSONForms::orderTemplate($selecao->template_inscricoes), true);
         $keys = array_keys($template);
 
         $arr = [];
@@ -848,7 +863,7 @@ class SelecaoController extends Controller
         $matriculas = Matricula::listarMatriculasPorSelecao($selecao, $ano);
 
         // vamos pegar o template da seleção para saber quais são os campos extras
-        $template = json_decode(JSONForms::orderTemplate($selecao->template), true);
+        $template = json_decode(JSONForms::orderTemplate($selecao->template_matriculas), true);
         $keys = array_keys($template);
 
         $arr = [];
@@ -883,7 +898,9 @@ class SelecaoController extends Controller
     private function monta_compact(Selecao $selecao, string $modo, ?string $scroll = null)
     {
         $data = (object) self::$data;
-        $selecao->template = JSONForms::orderTemplate($selecao->template);
+        $selecao->template_solicitacoesisencaotaxa = JSONForms::orderTemplate($selecao->template_solicitacoesisencaotaxa);
+        $selecao->template_inscricoes = JSONForms::orderTemplate($selecao->template_inscricoes);
+        $selecao->template_matriculas = JSONForms::orderTemplate($selecao->template_matriculas);
         $objeto = $selecao;
         $classe_nome = 'Selecao';
         $classe_nome_plural = 'selecoes';

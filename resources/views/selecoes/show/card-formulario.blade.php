@@ -1,20 +1,24 @@
+@php
+  $classe_nome_plural = ClasseUtils::obterClasseNomePlural($classe_nome);
+@endphp
+
 @section('styles')
 @parent
   <style>
-    #card-selecao-formulario {
+    #card-selecao-formulario-{{ $classe_nome_plural }} {
       border: 1px solid coral;
       border-top: 3px solid coral;
     }
   </style>
 @endsection
 
-<a name="card_formulario"></a>
-<div class="card mb-3" id="card-selecao-formulario">
+<a name="card_formulario_{{ $classe_nome_plural }}"></a>
+<div class="card mb-3" id="card-selecao-formulario-{{ $classe_nome_plural }}">
   <div class="card-header">
-    <i class="fab fa-wpforms"></i> Formulário
+    <i class="fab fa-wpforms"></i> Formulário para {{ ClasseUtils::obterClasseNomePluralAcentuado($classe_nome) }}
     <span class="small">@include('ajuda.selecoes.formulario')</span>
     @if ($condicao_ativa)
-      <a href="{{ route('selecoes.createtemplate', $selecao->id) }}" class="btn btn-light btn-sm text-primary">
+      <a href="{{ route('selecoes.createtemplate', ['selecao' => $selecao->id, 'classe_nome' => $classe_nome]) }}" class="btn btn-light btn-sm text-primary">
         <i class="fas fa-edit"></i> Editar
       </a>
     @endif
@@ -27,7 +31,7 @@
   <div class="card-body">
     <div class="ml-2 truncate-text">
       <strong>&nbsp; &nbsp; (tipo) Label</strong><br />
-      @foreach (json_decode($selecao->template) as $field => $value)
+      @foreach (json_decode($selecao->{'template_' . $classe_nome_plural}) as $field => $value)
         @php
           $isRequired = (isset($value->validate) && $value->validate == 'required');
           $isConditional = !empty($value->visible_campo);

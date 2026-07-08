@@ -38,7 +38,7 @@
       </div>
       @if (!$objeto_aprovada)
         <div class="text-right">
-          <button type="submit" class="btn btn-primary">Enviar {{ ucfirst(explode(' ', \App\Utils\ClasseUtils::obterClasseNomeFormatada($classe_nome))[0]) }}</button>
+          <button type="submit" class="btn btn-primary">Enviar {{ ucfirst(explode(' ', ClasseUtils::obterClasseNomeFormatada($classe_nome))[0]) }}</button>
         </div>
       @endif
     </div>

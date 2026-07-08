@@ -115,12 +115,12 @@ Route::delete('selecoes/{selecao}/tiposarquivoinscricao/{tipoarquivo}', [Selecao
 Route::post('selecoes/{selecao}/tiposarquivomatricula', [SelecaoController::class, 'storeTipoArquivoMatricula']);
 Route::delete('selecoes/{selecao}/tiposarquivomatricula/{tipoarquivo}', [SelecaoController::class, 'destroyTipoArquivoMatricula']);
 
-// SELEÇÕES > FORMULÁRIO
-Route::post('selecoes/{selecao}/template_json', [SelecaoController::class, 'storeTemplateJson']);
-Route::get('selecoes/{selecao}/template', [SelecaoController::class, 'createTemplate'])->name('selecoes.createtemplate');
-Route::post('selecoes/{selecao}/template', [SelecaoController::class, 'storeTemplate'])->name('selecoes.storetemplate');
-Route::get('selecoes/{selecao}/templatevalue/{campo}', [SelecaoController::class, 'createTemplateValue'])->name('selecoes.createtemplatevalue')->where('campo', '[a-zA-Z0-9_]+');
-Route::post('selecoes/{selecao}/templatevalue/{campo}', [SelecaoController::class, 'storeTemplateValue'])->name('selecoes.storetemplatevalue')->where('campo', '[a-zA-Z0-9_]+');
+// SELEÇÕES > FORMULÁRIOS
+Route::post('selecoes/{selecao}/{classe_nome}/template_json', [SelecaoController::class, 'storeTemplateJson']);
+Route::get('selecoes/{selecao}/{classe_nome}/template', [SelecaoController::class, 'createTemplate'])->name('selecoes.createtemplate');
+Route::post('selecoes/{selecao}/{classe_nome}/template', [SelecaoController::class, 'storeTemplate'])->name('selecoes.storetemplate');
+Route::get('selecoes/{selecao}/{classe_nome}/templatevalue/{campo}', [SelecaoController::class, 'createTemplateValue'])->name('selecoes.createtemplatevalue')->where('campo', '[a-zA-Z0-9_]+');
+Route::post('selecoes/{selecao}/{classe_nome}/templatevalue/{campo}', [SelecaoController::class, 'storeTemplateValue'])->name('selecoes.storetemplatevalue')->where('campo', '[a-zA-Z0-9_]+');
 
 // CATEGORIAS
 Route::resource('categorias', CategoriaController::class);

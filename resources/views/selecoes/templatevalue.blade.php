@@ -7,7 +7,7 @@
   @include('common.modal-processando')
   <div class="row">
     <div class="col-md-12">
-      {{ html()->form('post', route('selecoes.storetemplatevalue', ['selecao' => $selecao->id, 'campo' => $field]))->id('valuetemplate-form')->open() }}
+      {{ html()->form('post', route('selecoes.storetemplatevalue', ['selecao' => $selecao->id, 'classe_nome' => $classe_nome, 'campo' => $field]))->id('valuetemplate-form')->open() }}
         @csrf
         @method('post')
         {{ html()->hidden('id') }}
@@ -19,7 +19,7 @@
               @if (!is_null($selecao->categoria))
                 &nbsp;({{ $selecao->categoria->nome }})
               @endif
-              &nbsp; | &nbsp;  Formulário <i class="fas fa-angle-right mx-2"></i> {{ str_replace('_', ' ', ucwords($field)) }} &nbsp; | &nbsp; &nbsp;
+              &nbsp; | &nbsp;  Formulário para {{ ClasseUtils::obterClasseNomePluralAcentuado($classe_nome) }} <i class="fas fa-angle-right mx-2"></i> {{ str_replace('_', ' ', ucwords($field)) }} &nbsp; | &nbsp; &nbsp;
               @include('selecoes.partials.btn-template-novocampolista-modal')
             </div>
           </div>
@@ -63,11 +63,11 @@
                         <button class="btn btn-primary ml-1" type="submit">Salvar</button>
                       @endif
                     @else
-                      Não existe {{ str_replace('_', ' ', $field) }} para esse formulário.
+                      Não existe {{ str_replace('_', ' ', $field) }} para esse formulário para {{ Str::lower(ClasseUtils::obterClasseNomePluralAcentuado($classe_nome)) }}.
                       <br />
                       <br />
                     @endif
-                    <a class="btn btn-secondary" href="{{ route('selecoes.createtemplate', ['selecao' => $selecao]) }}">Voltar</a>
+                    <a class="btn btn-secondary" href="{{ route('selecoes.createtemplate', ['selecao' => $selecao, 'classe_nome' => $classe_nome]) }}">Voltar</a>
                   </div>
                 </div>
               </div>

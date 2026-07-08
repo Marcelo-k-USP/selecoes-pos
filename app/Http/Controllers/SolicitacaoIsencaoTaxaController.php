@@ -228,7 +228,7 @@ class SolicitacaoIsencaoTaxaController extends Controller
     public function monta_compact(SolicitacaoIsencaoTaxa $solicitacaoisencaotaxa, string $modo, ?string $scroll = null)
     {
         $data = (object) self::$data;
-        $solicitacaoisencaotaxa->selecao->template = JSONForms::orderTemplate($solicitacaoisencaotaxa->selecao->template);
+        $solicitacaoisencaotaxa->selecao->template_solicitacoesisencaotaxa = JSONForms::orderTemplate($solicitacaoisencaotaxa->selecao->template_solicitacoesisencaotaxa);
         $objeto = $solicitacaoisencaotaxa;
         $classe_nome = 'SolicitacaoIsencaoTaxa';
         $classe_nome_plural = 'solicitacoesisencaotaxa';

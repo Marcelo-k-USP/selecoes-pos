@@ -424,11 +424,11 @@ class MatriculaController extends Controller
     public function monta_compact(Matricula $matricula, string $modo, ?string $scroll = null)
     {
         $data = (object) self::$data;
-        $matricula->selecao->template = JSONForms::orderTemplate($matricula->selecao->template);
+        $matricula->selecao->template_matriculas = JSONForms::orderTemplate($matricula->selecao->template_matriculas);
         $objeto = $matricula;
         $classe_nome = 'Matricula';
         $classe_nome_plural = 'matriculas';
-        $form = JSONForms::generateForm($objeto->selecao, 'Inscricao', $objeto);    // no futuro, trocaremos 'Inscricao' por $classe_nome mas, por hora, a matrícula está usando sempre o formulário da inscrição... mas lembrando que o formulário de matrícula será como o de sit, isto é, não terá um template, mas adicionaremos o campo de reingresso
+        $form = JSONForms::generateForm($objeto->selecao, $classe_nome, $objeto);
         $responsaveis = $objeto->selecao->programa?->obterResponsaveis() ?? (new Programa())->obterResponsaveis();
         $extras = json_decode($objeto->extras, true);
         $matricula_disciplinas = ((isset($extras['disciplinas']) && is_array($extras['disciplinas'])) ? Disciplina::whereIn('id', $extras['disciplinas'])->orderBy('sigla')->get() : collect());

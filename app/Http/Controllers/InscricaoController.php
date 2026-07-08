@@ -310,7 +310,7 @@ class InscricaoController extends Controller
     public function monta_compact(Inscricao $inscricao, string $modo, ?string $scroll = null)
     {
         $data = (object) self::$data;
-        $inscricao->selecao->template = JSONForms::orderTemplate($inscricao->selecao->template);
+        $inscricao->selecao->template_inscricoes = JSONForms::orderTemplate($inscricao->selecao->template_inscricoes);
         $objeto = $inscricao;
         $classe_nome = 'Inscricao';
         $classe_nome_plural = 'inscricoes';

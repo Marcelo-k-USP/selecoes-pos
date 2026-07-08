@@ -7,7 +7,7 @@
   @include('common.modal-processando')
   <div class="row">
     <div class="col-md-12">
-      {{ html()->form('post', route('selecoes.storetemplate', $selecao->id))->id('template-form')->open() }}
+      {{ html()->form('post', route('selecoes.storetemplate', ['selecao' => $selecao->id, 'classe_nome' => $classe_nome]))->id('template-form')->open() }}
         @csrf
         @method('post')
         {{ html()->hidden('id') }}
@@ -19,7 +19,7 @@
               @if (!is_null($selecao->categoria))
                 &nbsp;({{ $selecao->categoria->nome }})
               @endif
-              &nbsp; | &nbsp;  Formulário &nbsp; | &nbsp; &nbsp;
+              &nbsp; | &nbsp;  Formulário para {{ ClasseUtils::obterClasseNomePluralAcentuado($classe_nome) }} &nbsp; | &nbsp; &nbsp;
               @include('selecoes.partials.btn-template-novocampo-modal')
             </div>
           </div>
@@ -83,7 +83,7 @@
                                     @else
                                       <input class="form-control" name="template[{{ $tkey }}][{{ $field }}]" value="{{ is_array($tvalue[$field]) ? json_encode($tvalue[$field], JSON_UNESCAPED_UNICODE) : $tvalue[$field] ?? '' }}" type="hidden">
                                     @endcan
-                                    <a href="{{ route('selecoes.createtemplatevalue', ['selecao' => $selecao->id, 'campo' => $tkey]) }}" class="btn btn-primary btn-sm">
+                                    <a href="{{ route('selecoes.createtemplatevalue', ['selecao' => $selecao->id, 'classe_nome' => $classe_nome, 'campo' => $tkey]) }}" class="btn btn-primary btn-sm">
                                       <i class="fas fa-edit"></i> Editar Lista
                                     </a>
                                     @break
@@ -113,7 +113,7 @@
                                       @else
                                         <input class="form-control" name="template[{{ $tkey }}][{{ $field }}]" type="hidden">
                                       @endcan
-                                      <a href="{{ route('selecoes.createtemplatevalue', ['selecao' => $selecao->id, 'campo' => $tkey]) }}" class="btn btn-primary btn-sm">
+                                      <a href="{{ route('selecoes.createtemplatevalue', ['selecao' => $selecao->id, 'classe_nome' => $classe_nome, 'campo' => $tkey]) }}" class="btn btn-primary btn-sm">
                                         <i class="fas fa-edit"></i> Editar Lista
                                       </a>
                                     @else
@@ -140,7 +140,7 @@
                         @endphp
                       @endforeach
                     @else
-                      Não existe formulário para essa seleção.
+                      Não existe formulário para {{ Str::lower(ClasseUtils::obterClasseNomePluralAcentuado($classe_nome)) }} para essa seleção.
                       <br />
                     @endif
                     <br />

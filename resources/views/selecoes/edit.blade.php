@@ -37,7 +37,19 @@
             <div class="col-md-7">
               @include('selecoes.show.card-principal')                               {{-- Principal --}}
               @if ($modo == 'edit')
-                @include('selecoes.show.card-formulario')                            {{-- Formulario --}}
+                @include('selecoes.show.card-formulario', [                          {{-- Formulário para Solicitações de Isenção de Taxa --}}
+                  'classe_nome' => 'SolicitacaoIsencaoTaxa',
+                ])
+                @if ($selecao->fazInscricoes())
+                  @include('selecoes.show.card-formulario', [                        {{-- Formulário para Inscrições --}}
+                    'classe_nome' => 'Inscricao',
+                  ])
+                @endif
+                @if ($selecao->fazMatriculas())
+                  @include('selecoes.show.card-formulario', [                        {{-- Formulário para Matrículas --}}
+                    'classe_nome' => 'Matricula',
+                  ])
+                @endif
               @endif
             </div>
             <div class="col-md-5">

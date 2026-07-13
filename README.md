@@ -92,6 +92,9 @@ A lei 14.534/2023 estabeleceu que estrangeiros devem possuir CPF para cursar pó
 Todo e qualquer e-mail enviado pelo sistema pode ser copiado (em cópia oculta) para o e-mail de envio do sistema. O endereço de envio de e-mail do sistema está definido no .env, e também está no .env essa configuração de copiar para esse remetente ou não.
 Desta forma, podemos ter um histórico de todos os e-mails enviados pelo sistema, embora na caixa de entrada ao invés de na caixa de enviados.
 
+Os fluxos são, grosso modo, o conjunto de operações efetuadas pelo sistema, compreendendo envios de e-mails, geração de boletos, alteração nos estados. São três: fluxo de solicitação de isenção de taxa, fluxo de inscrição e fluxo de matrícula.
+Praticamente para tudo que o sistema deve realizar, ele se baseia em qual é o fluxo, exceto para trabalhar com linhas de pesquisa/temas ou disciplinas (neste caso, o sistema verifica a categoria: se for aluno regular, trabalha com linhas de pesquisa/temas; se for aluno especial, trabalha com disciplinas).
+
 # Fluxo 1: solicitação de isenção de taxa
 
 1) o candidato envia a solicitação;

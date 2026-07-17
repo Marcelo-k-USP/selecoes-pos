@@ -140,22 +140,6 @@ class Programa extends Model
     }
 
 
-    public function parametro()
-    {
-        return $this->belongsTo(Parametro::class, 'parametro_id');
-    }
-
-    public function getParametro()
-    {
-        // se tem um único parâmetro no sistema, retorna esse mesmo.
-        if(config('selecoes-pos.usar_parametro_unico')) {
-            return Parametro::first();
-        }
-
-        // se possui múltiplos parâmetros, retorna aquele que está relacionado a esse programa.
-        return $this->parametro;
-    }
-
     public function nomeCompleto()
     {
         return $this->nome . ' (' . $this->sigla . ')';

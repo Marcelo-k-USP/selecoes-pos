@@ -1017,7 +1017,12 @@ class Selecao extends Model
                 break;
             }
 
-        $outras_condicoes_satisfeitas = (($this->categoria->nome !== 'Aluno Especial') ? !$this->niveislinhaspesquisa->isEmpty() : !$this->disciplinas->isEmpty());
+        $outras_condicoes_satisfeitas = true;
+        if ($this->exigeNivel() && $this->exigeLinhaPesquisa())
+            $outras_condicoes_satisfeitas &= !$this->niveislinhaspesquisa->isEmpty();
+        if ($this->exigeDisciplinas())
+            $outras_condicoes_satisfeitas &= !$this->disciplinas->isEmpty();
+
         if (!$possui_todos_os_arquivos_required || !$outras_condicoes_satisfeitas)
             $this->update(['estado' => 'Em Elaboração']);
         else {
@@ -1179,10 +1184,12 @@ class Selecao extends Model
         if (!$this->categoria)
             return false;
 
-        if ($this->categoria->nome != 'Aluno Especial')
+        if ($this->categoria->nome == 'Aluno Regular')
             return (bool) $this->programa?->fazInscricoes();
-        else
+        elseif ($this->categoria->nome == 'Aluno Especial')
             return (bool) Parametro::first()->especiaisFazInscricoes();
+        else
+            return false;
     }
 
     public function fazMatriculas()
@@ -1190,10 +1197,36 @@ class Selecao extends Model
         if (!$this->categoria)
             return false;
 
-        if ($this->categoria->nome != 'Aluno Especial')
+        if ($this->categoria->nome == 'Aluno Regular')
             return (bool) $this->programa?->fazMatriculas();
-        else
+        elseif ($this->categoria->nome == 'Aluno Especial')
             return (bool) Parametro::first()->especiaisFazMatriculas();
+        else
+            return false;
+    }
+
+    public function exigeNivel()
+    {
+        if (!$this->categoria)
+            return false;
+
+        return (bool) ($this->categoria->nome == 'Aluno Regular');
+    }
+
+    public function exigeLinhaPesquisa()
+    {
+        if (!$this->categoria)
+            return false;
+
+        return (bool) $this->categoria->exigeLinhaPesquisa();
+    }
+
+    public function exigeDisciplinas()
+    {
+        if (!$this->categoria)
+            return false;
+
+        return (bool) $this->categoria->exigeDisciplinas();
     }
 
     /**

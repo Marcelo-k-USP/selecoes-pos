@@ -47,6 +47,16 @@ class Categoria extends Model
         return $ret;
     }
 
+    public function exigeLinhaPesquisa()
+    {
+        return ($this->nome == 'Aluno Regular');
+    }
+
+    public function exigeDisciplinas()
+    {
+        return ($this->nome == 'Aluno Especial');
+    }
+
     /**
      * Categoria possui seleções
      */

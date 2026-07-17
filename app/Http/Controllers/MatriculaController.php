@@ -125,7 +125,7 @@ class MatriculaController extends Controller
                 'celular' => ((!Str::contains($user->telefone, 'ramal USP')) ? $user->telefone : ''),
                 'e_mail' => $user->email,
             );
-        if ($selecao->categoria->nome !== 'Aluno Especial')
+        if ($selecao->exigeNivel())
             $extras['nivel'] = $nivel->id;
         $matricula->extras = json_encode($extras);
 
@@ -210,12 +210,12 @@ class MatriculaController extends Controller
             if ($matricula->todosArquivosRequeridosPresentes($extras['nivel'] ?? null)) {
 
                 $disciplinas_id = (isset($extras['disciplinas']) ? $extras['disciplinas'] : []);
-                if (($matricula->selecao->categoria->nome != 'Aluno Especial') || (count($disciplinas_id) > 0)) {
+                if (!$matricula->selecao->exigeDisciplinas() || (count($disciplinas_id) > 0)) {
 
                     // verifica se ultrapassou o máximo de disciplinas para aluno especial
                     $cpf = $extras['cpf'];
                     $qtde_disciplinas_matriculas_anteriores = Matricula::where('extras->cpf', $cpf)->where('selecao_id', $matricula->selecao->id)->where('estado', 'Enviada')->sum(DB::raw('JSON_LENGTH(extras->"$.disciplinas")'));
-                    if (($matricula->selecao->categoria->nome != 'Aluno Especial') ||
+                    if (!$matricula->selecao->exigeDisciplinas() ||
                         (count($disciplinas_id) + $qtde_disciplinas_matriculas_anteriores <= (Parametro::first()?->max_disciplinas_aluno_especial ?: PHP_INT_MAX))) {
                         $matricula->estado = 'Enviada';
                         $matricula->save();
@@ -224,7 +224,7 @@ class MatriculaController extends Controller
                         $user = \Auth::user();
                         if ($matricula->selecao->tem_taxa && !SolicitacaoIsencaoTaxa::where('extras->cpf', $cpf ?? null)->where('selecao_id', $matricula->selecao->id)->whereIn('estado', ['Isenção de Taxa Aprovada', 'Isenção de Taxa Aprovada Após Recurso'])->exists())
                             if ((Parametro::first()->boleto_momento_envio == 'Envio da Inscrição/Matrícula') && $matricula->boletoFoiGerado)
-                                $info_adicional = ($matricula->selecao->categoria->nome !== 'Aluno Especial' ? ' e seu boleto foi enviado, não deixe de pagá-lo' : ((count($disciplinas_id) == 1) ? ' e seu boleto foi enviado, não deixe de pagá-lo' : ' e seus boletos foram enviados, não deixe de pagá-los'));
+                                $info_adicional = (!$matricula->selecao->exigeDisciplinas() ? ' e seu boleto foi enviado, não deixe de pagá-lo' : ((count($disciplinas_id) == 1) ? ' e seu boleto foi enviado, não deixe de pagá-lo' : ' e seus boletos foram enviados, não deixe de pagá-los'));
 
                         $request->session()->flash('alert-success', 'Sua matrícula foi enviada' . $info_adicional);
                         \UspTheme::activeUrl('matriculas');
@@ -357,7 +357,7 @@ class MatriculaController extends Controller
      */
     public function geraBoletos(Request $request, Matricula $matricula)
     {
-        if ($matricula->selecao->categoria->nome !== 'Aluno Especial') {
+        if (!$matricula->selecao->exigeDisciplinas()) {
             // gera o boleto da matrícula
             if (empty($this->boletoService->gerarBoleto($matricula, 'Matricula')['nome_original'])) {
                 $request->session()->flash('alert-danger', 'Não foi possível gerar o boleto para essa matrícula.');
@@ -374,7 +374,7 @@ class MatriculaController extends Controller
                     return redirect()->to(url('matriculas/edit/' . $matricula->id))->with($this->monta_compact($matricula, 'edit'));
                 }
 
-        $request->session()->flash('alert-success', ($matricula->selecao->categoria->nome !== 'Aluno Especial' ? 'O boleto foi gerado com sucesso' : 'O(s) boleto(s) foi(ram) gerado(s) com sucesso'));
+        $request->session()->flash('alert-success', (!$matricula->selecao->exigeDisciplinas() ? 'O boleto foi gerado com sucesso' : 'O(s) boleto(s) foi(ram) gerado(s) com sucesso'));
         \UspTheme::activeUrl('matriculas');
         return redirect()->to(url('matriculas/edit/' . $matricula->id))->with($this->monta_compact($matricula, 'edit', 'arquivos'));
     }
@@ -409,7 +409,10 @@ class MatriculaController extends Controller
         $objetos = Matricula::listarMatriculas();
         foreach ($objetos as $objeto) {
             $extras = json_decode($objeto->extras, true);
-            $objeto->linha_pesquisa = (isset($extras['linha_pesquisa']) ? (LinhaPesquisa::where('id', $extras['linha_pesquisa'])->first()->nome ?? null) : null);
+            if ($objeto->selecao->exigeLinhaPesquisa())
+                $objeto->linha_pesquisa = (isset($extras['linha_pesquisa']) ? (LinhaPesquisa::where('id', $extras['linha_pesquisa'])->first()->nome ?? null) : null);
+            else
+                $objeto->linha_pesquisa = null;
             $objeto->disciplinas = (isset($extras['disciplinas']) ? (Disciplina::whereIn('id', $extras['disciplinas'])->orderBy('sigla')->get()->map(function ($disciplina) {
                 return $disciplina->sigla . ' - ' . $disciplina->nome;
             })->implode(',<br />')) : null);
@@ -434,7 +437,7 @@ class MatriculaController extends Controller
         $objeto_disciplinas = ((isset($extras['disciplinas']) && is_array($extras['disciplinas'])) ? Disciplina::whereIn('id', $extras['disciplinas'])->orderBy('sigla')->get() : collect());
         $disciplinas = Disciplina::obterDisciplinasPossiveis($objeto->selecao);
         $nivel = (isset($extras['nivel']) ? Nivel::where('id', $extras['nivel'])->first()->nome : '');
-        $objeto->tiposarquivo = TipoArquivo::obterTiposArquivoDaSelecao('Matricula', ($objeto->selecao->categoria?->nome == 'Aluno Especial' ? new Collection() : collect([['nome' => $nivel]])), $objeto->selecao)
+        $objeto->tiposarquivo = TipoArquivo::obterTiposArquivoDaSelecao('Matricula', ($objeto->selecao->exigeNivel() ? collect([['nome' => $nivel]]) : collect()), $objeto->selecao)
             ->filter(function ($tipoarquivo) use ($matricula) { return (!str_starts_with($tipoarquivo->nome, 'Boleto(s) de Pagamento')) || $matricula->selecao->tem_taxa; })
             ->sortBy(function ($tipoarquivo) { return str_starts_with($tipoarquivo->nome, 'Boleto(s) de Pagamento') ? 1 : 0; });
         $tiposarquivo_selecao = TipoArquivo::obterTiposArquivoPossiveis('Selecao', null, $objeto->selecao->programa_id)
@@ -443,7 +446,7 @@ class MatriculaController extends Controller
                                                                  ->where('selecao_id', $objeto->selecao->id)
                                                                  ->where('estado', 'LIKE', 'Isenção de Taxa Aprovada%')->first();
         $disciplinas_sem_boleto = [];
-        if ($matricula->selecao->categoria->nome == 'Aluno Especial')
+        if ($matricula->selecao->exigeDisciplinas())
             foreach ($objeto_disciplinas as $disciplina)
                 if ($matricula->arquivos->filter(fn($a) => ($a->pivot->tipo == 'Boleto(s) de Pagamento') && str_contains(strtolower($a->nome_original), strtolower($disciplina->sigla)))->count() == 0)
                     $disciplinas_sem_boleto[] = $disciplina;

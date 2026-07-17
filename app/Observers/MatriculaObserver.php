@@ -77,7 +77,7 @@ class MatriculaObserver
                     ($boleto_momento_envio == 'Envio da Inscrição/Matrícula') &&
                     !SolicitacaoIsencaoTaxa::where('extras->cpf', $extras['cpf'] ?? null)->where('selecao_id', $matricula->selecao->id)->where('estado', 'LIKE', 'Isenção de Taxa Aprovada%')->exists() &&
                     !$matricula->selecao->fazInscricoes())    // se houve inscrição, o(s) boleto(s) já foi(ram) gerado(s), então não o(s) gero(amos) aqui
-                    if ($matricula->selecao->categoria->nome !== 'Aluno Especial')
+                    if (!$matricula->selecao->exigeDisciplinas())
                         $arquivos = [$this->boletoService->gerarBoleto($matricula, 'Matricula')];    // gera boleto para a matrícula
                     else {
                         $resultado = $this->processa_disciplinas_alteradas($matricula, $user, $email_secaoinformatica);    // gera boleto(s) para a(s) disciplina(s)
@@ -128,7 +128,7 @@ class MatriculaObserver
                     ($boleto_momento_envio == 'Aprovação da Inscrição/Matrícula') &&
                     !SolicitacaoIsencaoTaxa::where('extras->cpf', $extras['cpf'] ?? null)->where('selecao_id', $matricula->selecao->id)->where('estado', 'LIKE', 'Isenção de Taxa Aprovada%')->exists() &&
                     !$matricula->selecao->fazInscricoes())    // se houve inscrição, o(s) boleto(s) já foi(ram) gerado(s), então não o(s) gero(amos) aqui
-                    if ($matricula->selecao->categoria->nome !== 'Aluno Especial')
+                    if (!$matricula->selecao->exigeDisciplinas())
                         $arquivos = [$this->boletoService->gerarBoleto($matricula, 'Matricula')];    // gera boleto para a matrícula
                     else {
                         $disciplinas_id = (isset($extras['disciplinas']) ? $extras['disciplinas'] : []);

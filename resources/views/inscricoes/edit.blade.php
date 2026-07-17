@@ -39,7 +39,7 @@
               Nova Inscrição
             @endif
             para {{ $inscricao->selecao->nome }} ({{ $inscricao->selecao->categoria->nome }})
-            @if ($inscricao->selecao->categoria->nome !== 'Aluno Especial')
+            @if ($inscricao->selecao->exigeNivel())
               - {{ $nivel }}
             @endif
             <br />
@@ -60,7 +60,7 @@
               @endif
             </div>
             <div class="col-md-5">
-              @if (($inscricao->selecao->categoria->nome == 'Aluno Especial') && ($modo == 'edit'))
+              @if ($inscricao->selecao->exigeDisciplinas() && ($modo == 'edit'))
                 @include('common.show.card-disciplinas')        {{-- Disciplinas --}}
               @endif
               @include('common.show.card-responsaveis', [       {{-- Responsáveis --}}

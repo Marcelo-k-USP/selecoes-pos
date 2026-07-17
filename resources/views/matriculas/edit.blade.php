@@ -39,7 +39,7 @@
               Nova Matrícula
             @endif
             para {{ $matricula->selecao->nome }} ({{ $matricula->selecao->categoria->nome }})
-            @if ($matricula->selecao->categoria->nome !== 'Aluno Especial')
+            @if ($matricula->selecao->exigeNivel())
               - {{ $nivel }}
             @endif
             <br />
@@ -60,7 +60,7 @@
               @endif
             </div>
             <div class="col-md-5">
-              @if (($matricula->selecao->categoria->nome == 'Aluno Especial') && ($modo == 'edit'))
+              @if ($matricula->selecao->exigeDisciplinas() && ($modo == 'edit'))
                 @include('common.show.card-disciplinas')        {{-- Disciplinas --}}
               @endif
               @include('common.show.card-responsaveis', [       {{-- Responsáveis --}}

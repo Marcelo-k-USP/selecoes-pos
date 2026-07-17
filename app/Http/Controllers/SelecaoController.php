@@ -149,7 +149,7 @@ class SelecaoController extends Controller
 
             if ($ultimaSelecao) {
                 // herda vários dados da última seleção
-                if ($selecao->categoria->nome != 'Aluno Especial')
+                if ($selecao->exigeNivel() && $selecao->exigeLinhaPesquisa())
                     $selecao->niveislinhaspesquisa()->attach($ultimaSelecao->niveislinhaspesquisa->pluck('id'));
                 if ($selecao->fazInscricoes()) {
                     $selecao->template_inscricoes = $ultimaSelecao->template_inscricoes;
@@ -161,12 +161,12 @@ class SelecaoController extends Controller
                 }
             } else {
                 // cadastra automaticamente todas as instâncias de vários objetos como possíveis para este processo seletivo
-                if ($selecao->categoria->nome != 'Aluno Especial')
+                if ($selecao->exigeNivel() && $selecao->exigeLinhaPesquisa())
                     $selecao->niveislinhaspesquisa()->attach(NivelLinhaPesquisa::whereRelation('linhapesquisa', 'programa_id', $selecao->programa_id)->pluck('id'));
                 if ($selecao->fazInscricoes())
-                    $selecao->tiposarquivo()->attach(TipoArquivo::where('classe_nome', 'Inscrições')->whereHas('categorias', function ($query) use ($selecao) { $query->where('nome', $selecao->categoria->nome); })->whereRelation('niveisprogramas', 'programa_id', $selecao->programa_id)->pluck('id'));
+                    $selecao->tiposarquivo()->attach(TipoArquivo::where('classe_nome', 'Inscrições')->whereHas('categorias', function ($query) use ($selecao) { $query->where('nome', $selecao->categoria->nome); })->when($selecao->exigeNivel(), function ($query) use ($selecao) { $query->whereRelation('niveisprogramas', 'programa_id', $selecao->programa_id); })->pluck('id'));
                 if ($selecao->fazMatriculas())
-                    $selecao->tiposarquivo()->attach(TipoArquivo::where('classe_nome', 'Matrículas')->whereHas('categorias', function ($query) use ($selecao) { $query->where('nome', $selecao->categoria->nome); })->pluck('id'));
+                    $selecao->tiposarquivo()->attach(TipoArquivo::where('classe_nome', 'Matrículas')->whereHas('categorias', function ($query) use ($selecao) { $query->where('nome', $selecao->categoria->nome); })->when($selecao->exigeNivel(), function ($query) use ($selecao) { $query->whereRelation('niveisprogramas', 'programa_id', $selecao->programa_id); })->pluck('id'));
             }
 
             if ($selecao->tem_taxa) {
@@ -503,7 +503,6 @@ class SelecaoController extends Controller
         $db_transaction = DB::transaction(function () use ($request, $selecao) {
 
             $niveislinhaspesquisa = NivelLinhaPesquisa::whereIn('id', $request->id)->get();
-
             foreach ($niveislinhaspesquisa as $nivellinhapesquisa) {
                 $selecao->niveislinhaspesquisa()->detach($nivellinhapesquisa);
                 $selecao->niveislinhaspesquisa()->attach($nivellinhapesquisa);
@@ -875,10 +874,11 @@ class SelecaoController extends Controller
                 $i['programa'] = $inscricao->selecao->programa->nomeCompleto();
             $i['selecao'] = $inscricao->selecao->nome;
             $i['estado'] = $inscricao->estado;
-            if ($selecao->categoria->nome != 'Aluno Especial') {
+            if ($selecao->exigeNivel())
                 $i['nivel'] = isset($extras['nivel']) ? Nivel::where('id', $extras['nivel'])->first()->nome : '';
+            if ($selecao->exigeLinhaPesquisa())
                 $i['linha_pesquisa'] = isset($extras['linha_pesquisa']) ? LinhaPesquisa::where('id', $extras['linha_pesquisa'])->first()->nome : '';
-            } else
+            if ($selecao->exigeDisciplinas())
                 $i['disciplinas'] = Disciplina::whereIn('id', $extras['disciplinas'] ?? [])->pluck('sigla')->implode(', ');
             $autor = $inscricao->pessoas('Autor');
             $i['autor'] = $autor ? $autor->name : '';
@@ -925,10 +925,11 @@ class SelecaoController extends Controller
                 $i['programa'] = $matricula->selecao->programa->nomeCompleto();
             $i['selecao'] = $matricula->selecao->nome;
             $i['estado'] = $matricula->estado;
-            if ($selecao->categoria->nome != 'Aluno Especial') {
+            if ($selecao->exigeNivel())
                 $i['nivel'] = isset($extras['nivel']) ? Nivel::where('id', $extras['nivel'])->first()->nome : '';
+            if ($selecao->exigeLinhaPesquisa())
                 $i['linha_pesquisa'] = isset($extras['linha_pesquisa']) ? LinhaPesquisa::where('id', $extras['linha_pesquisa'])->first()->nome : '';
-            } else
+            if ($selecao->exigeDisciplinas())
                 $i['disciplinas'] = Disciplina::whereIn('id', $extras['disciplinas'] ?? [])->pluck('sigla')->implode(', ');
             $autor = $matricula->pessoas('Autor');
             $i['autor'] = $autor ? $autor->name : '';
@@ -954,12 +955,20 @@ class SelecaoController extends Controller
         $classe_nome = 'Selecao';
         $classe_nome_plural = 'selecoes';
         $rules = (new SelecaoRequest())->rules();
-        $objeto->niveislinhaspesquisa = NivelLinhaPesquisa::obterNiveisLinhasPesquisaDaSelecao($objeto);
-        $niveislinhaspesquisa = NivelLinhaPesquisa::obterNiveisLinhasPesquisaPossiveis($selecao->programa_id);
+        if ($selecao->exigeNivel() && $selecao->exigeLinhaPesquisa()) {
+            $objeto->niveislinhaspesquisa = NivelLinhaPesquisa::obterNiveisLinhasPesquisaDaSelecao($objeto);
+            $niveislinhaspesquisa = NivelLinhaPesquisa::obterNiveisLinhasPesquisaPossiveis($selecao->programa_id);
+        } else {
+            $objeto->niveislinhaspesquisa = collect();
+            $niveislinhaspesquisa = collect();
+        }
         $disciplinas = Disciplina::obterDisciplinasPossiveis();
         $objeto->disciplinas = $objeto->disciplinas->sortBy('sigla');
         $motivosisencaotaxa = MotivoIsencaoTaxa::listarMotivosIsencaoTaxa();
-        $niveis_selecao = ($selecao->categoria?->nome == 'Aluno Especial' ? new Collection() : (!empty($nivel) ? collect([['nome' => $nivel]]) : Nivel::all()));
+        if ($selecao->exigeNivel())
+            $niveis_selecao = (!empty($nivel) ? collect([['nome' => $nivel]]) : Nivel::all());
+        else
+            $niveis_selecao = collect();
         $objeto->tiposarquivo = TipoArquivo::obterTiposArquivoPossiveis('Selecao', null, $selecao->programa_id)
                             ->filter(function ($tipoarquivo) use ($selecao) { return ($tipoarquivo->nome !== 'Normas para Isenção de Taxa') || $selecao->tem_taxa; })
                         ->merge(TipoArquivo::obterTiposArquivoDaSelecao('SolicitacaoIsencaoTaxa', null, $selecao))
@@ -968,15 +977,20 @@ class SelecaoController extends Controller
                             ->filter(function ($tipoarquivo) { return !str_starts_with($tipoarquivo->nome, 'Boleto(s) de Pagamento'); }));
         $tiposarquivo_selecao = TipoArquivo::obterTiposArquivoPossiveis('Selecao', null, $selecao->programa_id);
         $tiposarquivo_solicitacaoisencaotaxa = TipoArquivo::obterTiposArquivoPossiveis('SolicitacaoIsencaoTaxa', null, $selecao->programa_id);
-        $tiposarquivo_inscricao = TipoArquivo::obterTiposArquivoPossiveis('Inscricao', ($selecao->categoria?->nome == 'Aluno Especial' ? new Collection() : Nivel::all()), $selecao->programa_id);
-        $tiposarquivo_matricula = TipoArquivo::obterTiposArquivoPossiveis('Matricula', ($selecao->categoria?->nome == 'Aluno Especial' ? new Collection() : Nivel::all()), $selecao->programa_id);
+        $tiposarquivo_inscricao = TipoArquivo::obterTiposArquivoPossiveis('Inscricao', ($selecao->exigeNivel() ? Nivel::all() : collect()), $selecao->programa_id);
+        $tiposarquivo_matricula = TipoArquivo::obterTiposArquivoPossiveis('Matricula', ($selecao->exigeNivel() ? Nivel::all() : collect()), $selecao->programa_id);
         $programas = Programa::all()->map(function ($programa) {
             $programa->setAttribute('fazInscricoes', $programa->fazInscricoes());
             $programa->setAttribute('fazMatriculas', $programa->fazMatriculas());
             return $programa;
         });
+        $categorias = Categoria::all()->map(function ($categoria) {
+            $categoria->setAttribute('exigeLinhaPesquisa', $categoria->exigeLinhaPesquisa());
+            $categoria->setAttribute('exigeDisciplinas', $categoria->exigeDisciplinas());
+            return $categoria;
+        });
         $max_upload_size = config('selecoes-pos.upload_max_filesize');
 
-        return compact('data', 'objeto', 'classe_nome', 'classe_nome_plural', 'modo', 'niveislinhaspesquisa', 'disciplinas', 'motivosisencaotaxa', 'tiposarquivo_selecao', 'tiposarquivo_solicitacaoisencaotaxa', 'tiposarquivo_inscricao', 'tiposarquivo_matricula', 'programas', 'max_upload_size', 'rules', 'scroll');
+        return compact('data', 'objeto', 'classe_nome', 'classe_nome_plural', 'modo', 'niveislinhaspesquisa', 'disciplinas', 'motivosisencaotaxa', 'tiposarquivo_selecao', 'tiposarquivo_solicitacaoisencaotaxa', 'tiposarquivo_inscricao', 'tiposarquivo_matricula', 'programas', 'categorias', 'max_upload_size', 'rules', 'scroll');
     }
 }

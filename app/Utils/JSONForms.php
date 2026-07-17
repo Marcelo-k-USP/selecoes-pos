@@ -144,7 +144,7 @@ class JSONForms
                                         '</select>' . PHP_EOL .
                                         '</div>' . PHP_EOL;
                     }
-                    if (($key == 'nome') && in_array($classe_nome, ['Inscricao', 'Matricula']) && ($selecao->categoria->nome !== 'Aluno Especial')) {
+                    if (($key == 'nome') && in_array($classe_nome, ['Inscricao', 'Matricula']) && $selecao->exigeNivel() && $selecao->exigeLinhaPesquisa()) {
                         $html_string_linhapesquisa .=
                                         '<div class="col-sm-3">' . PHP_EOL .
                                         '<label class="col-form-label va-middle" for="extras[linha_pesquisa]">Linha de <span style="white-space: nowrap;">Pesquisa/Tema&nbsp;<small class="text-required">(*)</small></span></label>' . PHP_EOL .

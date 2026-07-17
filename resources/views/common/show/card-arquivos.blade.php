@@ -64,11 +64,11 @@
                   (($boleto_momento_envio === 'Envio da Inscrição/Matrícula') && ($objeto->estado !== 'Aguardando Envio')) ||
                   (($boleto_momento_envio === 'Aprovação da Inscrição/Matrícula') && ($objeto->estado === 'Aprovada'))
                 ))    {{-- se o tipo de documento é boleto e ele(s) já deve(m) ter sido gerado(s) e enviado(s) --}}
-                  @if (($objeto->selecao->categoria->nome !== 'Aluno Especial') && ($objeto->arquivos->where('pivot.tipo', 'Boleto(s) de Pagamento')->count() == 0))    {{-- se é aluno regular e não tem o devido boleto --}}
+                  @if (!$objeto->selecao->exigeDisciplinas() && ($objeto->arquivos->where('pivot.tipo', 'Boleto(s) de Pagamento')->count() == 0))    {{-- se não exige disciplinas e não tem o devido boleto --}}
                     <a onclick="gerar_boletos({{ $objeto->id }}); return false;" class="btn btn-sm btn-light text-primary ml-2">
                       <i class="fas fa-plus"></i> Gerar
                     </a>
-                  @elseif (($objeto->selecao->categoria->nome == 'Aluno Especial') && (count($objeto->disciplinas_sem_boleto) > 0))    {{-- se é aluno especial e há boleto(s) a ser(em) gerado(s) para sua(s) disciplina(s) --}}
+                  @elseif ($objeto->selecao->exigeDisciplinas() && (count($objeto->disciplinas_sem_boleto) > 0))    {{-- se exige disciplinas e há boleto(s) a ser(em) gerado(s) para ela(s) --}}
                     @include('disciplinas.partials.modal-boletos', ['inclusor_url' => $classe_nome_plural . '/geraboletos/' . $objeto->id])
                   @endif
                 @endif

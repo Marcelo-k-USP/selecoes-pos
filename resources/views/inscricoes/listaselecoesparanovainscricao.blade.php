@@ -33,8 +33,8 @@
             <tr>
               <td>
                 {{ $categoria->nome }}
-                @if ($categoria->nome !== 'Aluno Especial')
-                  @foreach ($categoria->selecoes as $selecao)
+                @foreach ($categoria->selecoes as $selecao)
+                  @if ($selecao->exigeNivel())
                     <div class="ml-3">
                       {{ $selecao->nome }}
                       @if (!is_null($selecao->descricao))
@@ -45,9 +45,7 @@
                         &nbsp; &nbsp; &nbsp;<a href="inscricoes/create/{{ $selecao['id'] }}/{{ $nivel->id }}">{{ $nivel->nome }}</a><br />
                       @endforeach
                     </div>
-                  @endforeach
-                @else
-                  @foreach ($categoria->selecoes as $selecao)
+                  @else
                     <div class="ml-3">
                       <a href="inscricoes/create/{{ $selecao['id'] }}">{{ $selecao->nome }}
                         @if (!is_null($selecao->descricao))
@@ -55,8 +53,8 @@
                         @endif
                       </a>
                     </div>
-                  @endforeach
-                @endif
+                  @endif
+                @endforeach
                 <br>
               </td>
             </tr>

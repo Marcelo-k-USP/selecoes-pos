@@ -125,7 +125,7 @@ class InscricaoController extends Controller
                 'celular' => ((!Str::contains($user->telefone, 'ramal USP')) ? $user->telefone : ''),
                 'e_mail' => $user->email,
             );
-        if ($selecao->categoria->nome !== 'Aluno Especial')
+        if ($selecao->exigeNivel())
             $extras['nivel'] = $nivel->id;
         $inscricao->extras = json_encode($extras);
 
@@ -210,12 +210,12 @@ class InscricaoController extends Controller
             if ($inscricao->todosArquivosRequeridosPresentes($extras['nivel'] ?? null)) {
 
                 $disciplinas_id = (isset($extras['disciplinas']) ? $extras['disciplinas'] : []);
-                if (($inscricao->selecao->categoria->nome != 'Aluno Especial') || (count($disciplinas_id) > 0)) {
+                if (!$inscricao->selecao->exigeDisciplinas() || (count($disciplinas_id) > 0)) {
 
                     // verifica se ultrapassou o máximo de disciplinas para aluno especial
                     $cpf = $extras['cpf'];
                     $qtde_disciplinas_inscricoes_anteriores = Inscricao::where('extras->cpf', $cpf)->where('selecao_id', $inscricao->selecao->id)->where('estado', 'Enviada')->sum(DB::raw('JSON_LENGTH(extras->"$.disciplinas")'));
-                    if (($inscricao->selecao->categoria->nome != 'Aluno Especial') ||
+                    if (!$inscricao->selecao->exigeDisciplinas() ||
                         (count($disciplinas_id) + $qtde_disciplinas_inscricoes_anteriores <= (Parametro::first()?->max_disciplinas_aluno_especial ?: PHP_INT_MAX))) {
                         $inscricao->estado = 'Enviada';
                         $inscricao->save();
@@ -224,7 +224,7 @@ class InscricaoController extends Controller
                         $user = \Auth::user();
                         if ($inscricao->selecao->tem_taxa && !SolicitacaoIsencaoTaxa::where('extras->cpf', $cpf ?? null)->where('selecao_id', $inscricao->selecao->id)->whereIn('estado', ['Isenção de Taxa Aprovada', 'Isenção de Taxa Aprovada Após Recurso'])->exists())
                             if ((Parametro::first()->boleto_momento_envio == 'Envio da Inscrição/Matrícula') && $inscricao->boletoFoiGerado)
-                                $info_adicional = ($inscricao->selecao->categoria->nome !== 'Aluno Especial' ? ' e seu boleto foi enviado, não deixe de pagá-lo' : ((count($disciplinas_id) == 1) ? ' e seu boleto foi enviado, não deixe de pagá-lo' : ' e seus boletos foram enviados, não deixe de pagá-los'));
+                                $info_adicional = (!$inscricao->selecao->exigeDisciplinas() ? ' e seu boleto foi enviado, não deixe de pagá-lo' : ((count($disciplinas_id) == 1) ? ' e seu boleto foi enviado, não deixe de pagá-lo' : ' e seus boletos foram enviados, não deixe de pagá-los'));
 
                         $request->session()->flash('alert-success', 'Sua inscrição foi enviada' . $info_adicional);
                         \UspTheme::activeUrl('inscricoes');
@@ -357,7 +357,7 @@ class InscricaoController extends Controller
      */
     public function geraBoletos(Request $request, Inscricao $inscricao)
     {
-        if ($inscricao->selecao->categoria->nome !== 'Aluno Especial') {
+        if (!$inscricao->selecao->exigeDisciplinas()) {
             // gera o boleto da inscrição
             if (empty($this->boletoService->gerarBoleto($inscricao, 'Inscricao')['nome_original'])) {
                 $request->session()->flash('alert-danger', 'Não foi possível gerar o boleto para essa inscrição.');
@@ -374,7 +374,7 @@ class InscricaoController extends Controller
                     return redirect()->to(url('inscricoes/edit/' . $inscricao->id))->with($this->monta_compact($inscricao, 'edit'));
                 }
 
-        $request->session()->flash('alert-success', ($inscricao->selecao->categoria->nome !== 'Aluno Especial' ? 'O boleto foi gerado com sucesso' : 'O(s) boleto(s) foi(ram) gerado(s) com sucesso'));
+        $request->session()->flash('alert-success', (!$inscricao->selecao->exigeDisciplinas() ? 'O boleto foi gerado com sucesso' : 'O(s) boleto(s) foi(ram) gerado(s) com sucesso'));
         \UspTheme::activeUrl('inscricoes');
         return redirect()->to(url('inscricoes/edit/' . $inscricao->id))->with($this->monta_compact($inscricao, 'edit', 'arquivos'));
     }
@@ -409,7 +409,10 @@ class InscricaoController extends Controller
         $objetos = Inscricao::listarInscricoes();
         foreach ($objetos as $objeto) {
             $extras = json_decode($objeto->extras, true);
-            $objeto->linha_pesquisa = (isset($extras['linha_pesquisa']) ? (LinhaPesquisa::where('id', $extras['linha_pesquisa'])->first()->nome ?? null) : null);
+            if ($objeto->selecao->exigeLinhaPesquisa())
+                $objeto->linha_pesquisa = (isset($extras['linha_pesquisa']) ? (LinhaPesquisa::where('id', $extras['linha_pesquisa'])->first()->nome ?? null) : null);
+            else
+                $objeto->linha_pesquisa = null;
             $objeto->disciplinas = (isset($extras['disciplinas']) ? (Disciplina::whereIn('id', $extras['disciplinas'])->orderBy('sigla')->get()->map(function ($disciplina) {
                 return $disciplina->sigla . ' - ' . $disciplina->nome;
             })->implode(',<br />')) : null);
@@ -434,7 +437,7 @@ class InscricaoController extends Controller
         $objeto_disciplinas = ((isset($extras['disciplinas']) && is_array($extras['disciplinas'])) ? Disciplina::whereIn('id', $extras['disciplinas'])->orderBy('sigla')->get() : collect());
         $disciplinas = Disciplina::obterDisciplinasPossiveis($objeto->selecao);
         $nivel = (isset($extras['nivel']) ? Nivel::where('id', $extras['nivel'])->first()->nome : '');
-        $objeto->tiposarquivo = TipoArquivo::obterTiposArquivoDaSelecao('Inscricao', ($objeto->selecao->categoria?->nome == 'Aluno Especial' ? new Collection() : collect([['nome' => $nivel]])), $objeto->selecao)
+        $objeto->tiposarquivo = TipoArquivo::obterTiposArquivoDaSelecao('Inscricao', ($objeto->selecao->exigeNivel() ? collect([['nome' => $nivel]]) : collect()), $objeto->selecao)
             ->filter(function ($tipoarquivo) use ($inscricao) { return (!str_starts_with($tipoarquivo->nome, 'Boleto(s) de Pagamento')) || $inscricao->selecao->tem_taxa; })
             ->sortBy(function ($tipoarquivo) { return str_starts_with($tipoarquivo->nome, 'Boleto(s) de Pagamento') ? 1 : 0; });
         $tiposarquivo_selecao = TipoArquivo::obterTiposArquivoPossiveis('Selecao', null, $objeto->selecao->programa_id)
@@ -443,7 +446,7 @@ class InscricaoController extends Controller
                                                                  ->where('selecao_id', $objeto->selecao->id)
                                                                  ->where('estado', 'LIKE', 'Isenção de Taxa Aprovada%')->first();
         $disciplinas_sem_boleto = [];
-        if ($inscricao->selecao->categoria->nome == 'Aluno Especial')
+        if ($inscricao->selecao->exigeDisciplinas())
             foreach ($objeto_disciplinas as $disciplina)
                 if ($inscricao->arquivos->filter(fn($a) => ($a->pivot->tipo == 'Boleto(s) de Pagamento') && str_contains(strtolower($a->nome_original), strtolower($disciplina->sigla)))->count() == 0)
                     $disciplinas_sem_boleto[] = $disciplina;

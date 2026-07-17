@@ -6,7 +6,6 @@ use App\Http\Requests\SolicitacaoIsencaoTaxaRequest;
 use App\Jobs\AtualizaStatusSelecoes;
 use App\Models\LocalUser;
 use App\Models\MotivoIsencaoTaxa;
-use App\Models\Nivel;
 use App\Models\Programa;
 use App\Models\Selecao;
 use App\Models\SolicitacaoIsencaoTaxa;

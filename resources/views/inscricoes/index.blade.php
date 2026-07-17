@@ -82,7 +82,8 @@
               @endif
               @if (!is_null($inscricao->linha_pesquisa))
                 {{ $inscricao->linha_pesquisa }}
-              @else
+              @endif
+              @if (!is_null($inscricao->disciplinas))
                 {!! $inscricao->disciplinas !!}
               @endif
             </td>

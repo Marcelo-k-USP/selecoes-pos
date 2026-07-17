@@ -68,9 +68,22 @@
               {{ $matricula->selecao->nome }} ({{ $matricula->selecao->categoria->nome }})
             </td>
             <td>
+              @php
+                $nivel = null;
+                $nivel_nome = null;
+                if (!empty($extras->nivel)) {
+                  $nivel = json_decode($niveis->firstWhere('id', $extras->nivel));
+                  if ($nivel && property_exists($nivel, 'nome'))
+                    $nivel_nome = $nivel->nome;
+                }
+              @endphp
+              @if (!is_null($nivel_nome))
+                {{ $nivel_nome }} em
+              @endif
               @if (!is_null($matricula->linha_pesquisa))
                 {{ $matricula->linha_pesquisa }}
-              @else
+              @endif
+              @if (!is_null($matricula->disciplinas))
                 {!! $matricula->disciplinas !!}
               @endif
             </td>

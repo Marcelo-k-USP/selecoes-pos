@@ -39,9 +39,11 @@
             <div class="col-md-7">
               @include('selecoes.show.card-principal')                               {{-- Principal --}}
               @if ($modo == 'edit')
-                @include('selecoes.show.card-formulario', [                          {{-- Formulário para Solicitações de Isenção de Taxa --}}
-                  'classe_nome' => 'SolicitacaoIsencaoTaxa',
-                ])
+                @if ($selecao->tem_taxa)
+                  @include('selecoes.show.card-formulario', [                        {{-- Formulário para Solicitações de Isenção de Taxa --}}
+                    'classe_nome' => 'SolicitacaoIsencaoTaxa',
+                  ])
+                @endif
                 @if ($selecao->fazInscricoes())
                   @include('selecoes.show.card-formulario', [                        {{-- Formulário para Inscrições --}}
                     'classe_nome' => 'Inscricao',
@@ -56,20 +58,25 @@
             </div>
             <div class="col-md-5">
               @if ($modo == 'edit')
-                @if ($selecao->categoria->nome !== 'Aluno Especial')
+                @if ($selecao->exigeNivel() && $selecao->exigeLinhaPesquisa())
                   @include('selecoes.show.card-niveislinhaspesquisa')                {{-- Níveis + Linhas de Pesquisa/Temas --}}
-                @else
+                @endif
+                @if ($selecao->exigeDisciplinas())
                   @include('selecoes.show.card-disciplinas')                         {{-- Disciplinas --}}
                 @endif
-                @include('selecoes.show.card-motivosisencaotaxa')                    {{-- Motivos de Isenção de Taxa --}}
+                @if ($selecao->tem_taxa)
+                  @include('selecoes.show.card-motivosisencaotaxa')                  {{-- Motivos de Isenção de Taxa --}}
+                @endif
                 @include('common.show.card-arquivos', [                              {{-- Arquivos --}}
                   'tipoarquivo_classe_nome_plural_acentuado' => 'Seleções',
                 ])
-                @include('selecoes.show.card-tiposarquivo', [                        {{-- Tipos de Arquivo nas Solicitações de Isenção de Taxa --}}
-                  'tipoarquivo_classe_nome_plural_acentuado' => 'Solicitações de Isenção de Taxa',
-                  'tipoarquivo_classe_nome' => 'SolicitacaoIsencaoTaxa',
-                  'tiposarquivo' => $tiposarquivo_solicitacaoisencaotaxa
-                ])
+                @if ($selecao->tem_taxa)
+                  @include('selecoes.show.card-tiposarquivo', [                      {{-- Tipos de Arquivo nas Solicitações de Isenção de Taxa --}}
+                    'tipoarquivo_classe_nome_plural_acentuado' => 'Solicitações de Isenção de Taxa',
+                    'tipoarquivo_classe_nome' => 'SolicitacaoIsencaoTaxa',
+                    'tiposarquivo' => $tiposarquivo_solicitacaoisencaotaxa
+                  ])
+                @endif
                 @if ($selecao->fazInscricoes())
                   @include('selecoes.show.card-tiposarquivo', [                      {{-- Tipos de Arquivo nas Inscrições --}}
                     'tipoarquivo_classe_nome_plural_acentuado' => 'Inscrições',
@@ -84,7 +91,9 @@
                     'tiposarquivo' => $tiposarquivo_matricula
                   ])
                 @endif
-                @include('selecoes.show.card-solicitacoesisencaotaxa')               {{-- Solicitações de Isenção de Taxa --}}
+                @if ($selecao->tem_taxa)
+                  @include('selecoes.show.card-solicitacoesisencaotaxa')             {{-- Solicitações de Isenção de Taxa --}}
+                @endif
                 @if ($selecao->fazInscricoes())
                   @include('selecoes.show.card-inscricoes')                          {{-- Inscrições --}}
                 @endif

@@ -76,7 +76,7 @@ class InscricaoObserver
                 if ($inscricao->selecao->tem_taxa &&
                     ($boleto_momento_envio == 'Envio da Inscrição/Matrícula') &&
                     !SolicitacaoIsencaoTaxa::where('extras->cpf', $extras['cpf'] ?? null)->where('selecao_id', $inscricao->selecao->id)->where('estado', 'LIKE', 'Isenção de Taxa Aprovada%')->exists())
-                    if ($inscricao->selecao->categoria->nome !== 'Aluno Especial')
+                    if (!$inscricao->selecao->exigeDisciplinas())
                         $arquivos = [$this->boletoService->gerarBoleto($inscricao, 'Inscricao')];    // gera boleto para a inscrição
                     else {
                         $resultado = $this->processa_disciplinas_alteradas($inscricao, $user, $email_secaoinformatica);    // gera boleto(s) para a(s) disciplina(s)
@@ -143,7 +143,7 @@ class InscricaoObserver
                 if ($inscricao->selecao->tem_taxa &&
                     ($boleto_momento_envio == 'Aprovação da Inscrição/Matrícula') &&
                     !SolicitacaoIsencaoTaxa::where('extras->cpf', $extras['cpf'] ?? null)->where('selecao_id', $inscricao->selecao->id)->where('estado', 'LIKE', 'Isenção de Taxa Aprovada%')->exists())
-                    if ($inscricao->selecao->categoria->nome !== 'Aluno Especial')
+                    if (!$inscricao->selecao->exigeDisciplinas())
                         $arquivos = [$this->boletoService->gerarBoleto($inscricao, 'Inscricao')];    // gera boleto para a inscrição
                     else {
                         $disciplinas_id = (isset($extras['disciplinas']) ? $extras['disciplinas'] : []);

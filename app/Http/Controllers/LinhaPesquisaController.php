@@ -166,42 +166,17 @@ class LinhaPesquisaController extends Controller
     {
         Gate::authorize('linhaspesquisa.update', $linhapesquisa);
 
-        if ($request->externo)
-            $request->validate([
-                'externo_nome' => 'required',
-                'externo_codpes' => 'required',
-                'externo_email' => 'required',
-            ], [
-                'externo_nome.required' => 'Nome obrigatório',
-                'externo_codpes.required' => 'Número USP obrigatório',
-                'externo_email.required' => 'E-mail obrigatório',
-                'externo_email.email' => 'O e-mail não é válido!',
-            ]);
-        else
-            $request->validate([
-                'codpes' => 'required',
-            ], [
-                'codpes.required' => 'Orientador obrigatório',
-            ]);
+        $request->validate([
+            'id' => 'required',
+        ],
+        [
+            'id.required' => 'Orientador obrigatório',
+        ]);
 
         // transaction para não ter problema de inconsistência do DB
         $db_transaction = DB::transaction(function () use ($request, $linhapesquisa) {
 
-            if ($request->externo) {
-                $orientador = Orientador::where('codpes', $request->externo_codpes)->first();
-                if (is_null($orientador)) {
-                    $orientador = new Orientador();
-                    $orientador->codpes = $request->externo_codpes;
-                    $orientador->nome = $request->externo_nome;
-                    $orientador->email = $request->externo_email;
-                    $orientador->externo = true;
-                    $orientador->save();
-                }
-            } else {
-                $orientador = Orientador::where('codpes', $request->codpes)->first();
-                if (is_null($orientador))
-                    $orientador = Orientador::create($request->all());
-            }
+            $orientador = Orientador::where('id', $request->id)->first();
 
             $existia = $linhapesquisa->orientadores()->detach($orientador);
 
@@ -254,8 +229,9 @@ class LinhaPesquisaController extends Controller
                 $orientador->nome = Orientador::obterNome($orientador->codpes);
         $objeto = $linhapesquisa;
         $fields_orientador = Orientador::getFields();
+        $orientadores = Orientador::listarOrientadores();
         $rules = LinhaPesquisaRequest::rules;
 
-        return compact('data', 'objeto', 'fields_orientador', 'rules', 'modo');
+        return compact('data', 'objeto', 'fields_orientador', 'orientadores', 'rules', 'modo');
     }
 }

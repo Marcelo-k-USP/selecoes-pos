@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Observers\OrientadorObserver;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -16,6 +17,9 @@ class Orientador extends Model
 
     protected $fillable = [
         'codpes',
+        'nome',
+        'email',
+        'externo'
     ];
 
     // uso no crud generico
@@ -25,6 +29,16 @@ class Orientador extends Model
             'label' => 'Orientador',
         ],
     ];
+
+    /**
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        Orientador::observe(OrientadorObserver::class);
+    }
 
     // uso no crud generico
     public static function getFields()
@@ -61,6 +75,11 @@ class Orientador extends Model
             return $orientador->email;
         else
             return Pessoa::email($codpes);
+    }
+
+    public static function listarOrientadores()
+    {
+        return self::get();
     }
 
     /**

@@ -14,6 +14,7 @@ use App\Http\Controllers\LinhaPesquisaController;
 use App\Http\Controllers\LocalUserController;
 use App\Http\Controllers\MatriculaController;
 use App\Http\Controllers\MotivoIsencaoTaxaController;
+use App\Http\Controllers\OrientadorController;
 use App\Http\Controllers\ParametroController;
 use App\Http\Controllers\ProgramaController;
 use App\Http\Controllers\ResponsavelController;
@@ -151,6 +152,9 @@ Route::resource('disciplinas', DisciplinaController::class);
 
 // MOTIVOS DE ISENÇÃO DE TAXA
 Route::resource('motivosisencaotaxa', MotivoIsencaoTaxaController::class);
+
+// ORIENTADORES
+Route::resource('orientadores', OrientadorController::class);
 
 // TIPOS DE ARQUIVO
 Route::resource('tiposarquivo', TipoArquivoController::class);

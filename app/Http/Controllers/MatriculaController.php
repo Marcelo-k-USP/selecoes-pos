@@ -11,7 +11,6 @@ use App\Models\LinhaPesquisa;
 use App\Models\LocalUser;
 use App\Models\Matricula;
 use App\Models\Nivel;
-use App\Models\Orientador;
 use App\Models\Parametro;
 use App\Models\Programa;
 use App\Models\Selecao;

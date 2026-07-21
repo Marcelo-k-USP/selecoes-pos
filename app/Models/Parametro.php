@@ -52,7 +52,6 @@ class Parametro extends Model
             'name' => 'processos_especiais',
             'label' => 'Processo(s) Utilizado(s) para Aluno Especial',
             'type' => 'select',
-            'data' => ['Inscrição' => 'Inscrição', 'Inscrição e Matrícula' => 'Inscrição e Matrícula', 'Matrícula' => 'Matrícula'],
         ],
         [
             'name' => 'max_disciplinas_aluno_especial',
@@ -76,7 +75,32 @@ class Parametro extends Model
     // uso no crud generico
     public static function getFields()
     {
-        return self::fields;
+        $processos_especiais = [];
+        $parametro = new self();
+        if ($parametro->permiteInscricao())
+            $processos_especiais['Inscrição'] = 'Inscrição';
+        if ($parametro->permiteInscricao() && $parametro->permiteMatricula())
+            $processos_especiais['Inscrição e Matrícula'] = 'Inscrição e Matrícula';
+        if ($parametro->permiteMatricula())
+            $processos_especiais['Matrícula'] = 'Matrícula';
+
+        $fields = self::fields;
+        foreach ($fields as &$field)
+            if ($field['name'] == 'processos_especiais') {
+                $field['data'] = $processos_especiais;
+                break;
+            }
+        return $fields;
+    }
+
+    public function permiteInscricao()
+    {
+        return true;    // vai depender do vínculo (a ser implementado no futuro, quando este selecoes-pos se tornar selecoes)
+    }
+
+    public function permiteMatricula()
+    {
+        return true;    // vai depender do vínculo (a ser implementado no futuro, quando este selecoes-pos se tornar selecoes)
     }
 
     public function especiaisFazInscricoes()

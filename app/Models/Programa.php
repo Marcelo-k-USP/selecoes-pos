@@ -46,14 +46,28 @@ class Programa extends Model
             'name' => 'processos',
             'label' => 'Processo(s) Utilizado(s)',
             'type' => 'select',
-            'data' => ['Inscrição' => 'Inscrição', 'Inscrição e Matrícula' => 'Inscrição e Matrícula', 'Matrícula' => 'Matrícula'],
         ],
     ];
 
     // uso no crud generico
     public static function getFields()
     {
-        return self::fields;
+        $processos = [];
+        $parametro = new Parametro();
+        if ($parametro->permiteInscricao())
+            $processos['Inscrição'] = 'Inscrição';
+        if ($parametro->permiteInscricao() && $parametro->permiteMatricula())
+            $processos['Inscrição e Matrícula'] = 'Inscrição e Matrícula';
+        if ($parametro->permiteMatricula())
+            $processos['Matrícula'] = 'Matrícula';
+
+        $fields = self::fields;
+        foreach ($fields as &$field)
+            if ($field['name'] == 'processos') {
+                $field['data'] = $processos;
+                break;
+            }
+        return $fields;
     }
 
     /**

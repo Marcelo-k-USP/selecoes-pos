@@ -65,7 +65,7 @@
               @include('matriculas.partials.status-muted')
             </td>
             <td>
-              {{ $matricula->selecao->nome }} ({{ $matricula->selecao->categoria->nome }})
+              {{ $matricula->selecao->nome }}{{ $matricula->selecao->categoria ? ' (' . $matricula->selecao->categoria->nome . ')' : '' }}
             </td>
             <td>
               @php

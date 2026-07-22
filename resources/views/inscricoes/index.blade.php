@@ -65,7 +65,7 @@
               @include('inscricoes.partials.status-muted')
             </td>
             <td>
-              {{ $inscricao->selecao->nome }} ({{ $inscricao->selecao->categoria->nome }})
+              {{ $inscricao->selecao->nome }}{{ $inscricao->selecao->categoria ? ' (' . $inscricao->selecao->categoria->nome . ')' : '' }}
             </td>
             <td>
               @php

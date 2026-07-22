@@ -40,7 +40,7 @@
             @include('selecoes.partials.status-muted')
           </td>
           <td>{{ $selecao->programa?->nome ?? 'N/A' }}</td>
-          <td>{{ $selecao->categoria->nome }}</td>
+          <td>{{ $selecao->categoria?->nome ?? 'N/A' }}</td>
           <td class="text-right">
             <span class="d-none">{{ $selecao->created_at }}</span>
             {{ formatarDataHora($selecao->created_at) }}

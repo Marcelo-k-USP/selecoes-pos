@@ -29,7 +29,7 @@ class SelecaoRequest extends FormRequest
         // o Laravel invoca prepareForValidation automaticamente neste ponto
 
         return [
-            'categoria_id' => ['required', 'numeric'],
+            'categoria_id' => ['required_if:_categoria_required_marker,1', 'nullable', 'numeric'],
             'programa_id' => ['required_unless:categoria_id,' . Categoria::where('nome', 'Aluno Especial')->value('id')],
             'ingresso_semestre' => ['required', 'integer', 'between:0,2'],
             'ingresso_ano' => ['required', 'integer', 'digits:4'],
@@ -61,7 +61,7 @@ class SelecaoRequest extends FormRequest
 
     public function messages() {
         return [
-            'categoria_id.required' => 'A categoria é obrigatória!',
+            'categoria_id.required_if' => 'A categoria é obrigatória!',
             'categoria_id.numeric' => 'A categoria é inválida!',
             'programa_id.required_unless' => 'O programa é obrigatório!',
             'descricao.max' => 'A descrição da seleção não pode exceder 255 caracteres!',
@@ -92,6 +92,7 @@ class SelecaoRequest extends FormRequest
     protected function prepareForValidation() {
         $selecao_temporaria = new Selecao($this->all());
         $this->merge([
+            '_categoria_required_marker' => Parametro::first()->exigeCategoria() ? 1 : 0,
             '_solicitacaoisencaotaxa_datas_required_marker' => ($this->input('tem_taxa') === 'on') ? 1 : 0,
             '_inscricao_datas_required_marker' => $selecao_temporaria->fazInscricoes() ? 1 : 0,
             '_matricula_datas_required_marker' => $selecao_temporaria->fazMatriculas() ? 1 : 0,

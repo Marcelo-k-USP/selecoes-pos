@@ -142,11 +142,14 @@ class SelecaoController extends Controller
             }
 
             // obtém a última seleção desse programa/aluno especial
-            if ($selecao->categoria->nome != 'Aluno Especial')
+            $ultimaSelecao = null;
+            $queryUltimaSelecao = null;
+            if ($selecao->categoria?->nome == 'Aluno Regular')
                 $queryUltimaSelecao = Selecao::where('programa_id', $selecao->programa_id)->where('id', '!=', $selecao->id);
-            else
+            elseif ($selecao->categoria?->nome == 'Aluno Especial')
                 $queryUltimaSelecao = Selecao::whereRelation('categoria', 'nome', 'Aluno Especial')->where('id', '!=', $selecao->id);
-            $ultimaSelecao = $queryUltimaSelecao->orderBy('id', 'desc')->first();
+            if ($queryUltimaSelecao)
+                $ultimaSelecao = $queryUltimaSelecao->orderBy('id', 'desc')->first();
 
             if ($ultimaSelecao) {
                 // herda vários dados da última seleção
@@ -164,10 +167,19 @@ class SelecaoController extends Controller
                 // cadastra automaticamente todas as instâncias de vários objetos como possíveis para este processo seletivo
                 if ($selecao->exigeNivel() && $selecao->exigeLinhaPesquisa())
                     $selecao->niveislinhaspesquisa()->attach(NivelLinhaPesquisa::whereRelation('linhapesquisa', 'programa_id', $selecao->programa_id)->pluck('id'));
-                if ($selecao->fazInscricoes())
-                    $selecao->tiposarquivo()->attach(TipoArquivo::where('classe_nome', 'Inscrições')->whereHas('categorias', function ($query) use ($selecao) { $query->where('nome', $selecao->categoria->nome); })->when($selecao->exigeNivel(), function ($query) use ($selecao) { $query->whereRelation('niveisprogramas', 'programa_id', $selecao->programa_id); })->pluck('id'));
+                if ($selecao->fazInscricoes()) {
+                    $selecao->tiposarquivo()->attach(TipoArquivo::where('classe_nome', 'Inscrições')->when($selecao->categoria, function ($query) use ($selecao) {
+                        $query->whereHas('categorias', function ($query) use ($selecao) { $query->where('nome', $selecao->categoria->nome); });
+                    })->when($selecao->exigeNivel(), function ($query) use ($selecao) {
+                        $query->whereRelation('niveisprogramas', 'programa_id', $selecao->programa_id);
+                    })->pluck('id'));
+                }
                 if ($selecao->fazMatriculas())
-                    $selecao->tiposarquivo()->attach(TipoArquivo::where('classe_nome', 'Matrículas')->whereHas('categorias', function ($query) use ($selecao) { $query->where('nome', $selecao->categoria->nome); })->when($selecao->exigeNivel(), function ($query) use ($selecao) { $query->whereRelation('niveisprogramas', 'programa_id', $selecao->programa_id); })->pluck('id'));
+                    $selecao->tiposarquivo()->attach(TipoArquivo::where('classe_nome', 'Matrículas')->when($selecao->categoria, function ($query) use ($selecao) {
+                        $query->whereHas('categorias', function ($query) use ($selecao) { $query->where('nome', $selecao->categoria->nome); });
+                    })->when($selecao->exigeNivel(), function ($query) use ($selecao) {
+                        $query->whereRelation('niveisprogramas', 'programa_id', $selecao->programa_id);
+                    })->pluck('id'));
             }
 
             if ($selecao->tem_taxa) {
@@ -875,7 +887,7 @@ class SelecaoController extends Controller
 
             $extras = json_decode($solicitacaoisencaotaxa->extras, true) ?? [];
             $i['numero_solicitacao'] = $solicitacaoisencaotaxa->id;
-            if ($selecao->categoria->nome != 'Aluno Especial')
+            if ($selecao->categoria?->nome == 'Aluno Regular')
                 $i['programa'] = $solicitacaoisencaotaxa->selecao->programa->nomeCompleto();
             $i['selecao'] = $solicitacaoisencaotaxa->selecao->nome;
             $i['estado'] = $solicitacaoisencaotaxa->estado;
@@ -922,7 +934,7 @@ class SelecaoController extends Controller
 
             $extras = json_decode($inscricao->extras, true) ?? [];
             $i['numero_inscricao'] = $inscricao->id;
-            if ($selecao->categoria->nome != 'Aluno Especial')
+            if ($selecao->categoria?->nome == 'Aluno Regular')
                 $i['programa'] = $inscricao->selecao->programa->nomeCompleto();
             $i['selecao'] = $inscricao->selecao->nome;
             $i['estado'] = $inscricao->estado;
@@ -975,7 +987,7 @@ class SelecaoController extends Controller
 
             $extras = json_decode($matricula->extras, true) ?? [];
             $i['numero_matricula'] = $matricula->id;
-            if ($selecao->categoria->nome != 'Aluno Especial')
+            if ($selecao->categoria?->nome == 'Aluno Regular')
                 $i['programa'] = $matricula->selecao->programa->nomeCompleto();
             $i['selecao'] = $matricula->selecao->nome;
             $i['estado'] = $matricula->estado;

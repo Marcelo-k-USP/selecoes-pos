@@ -63,7 +63,7 @@
               @include('solicitacoesisencaotaxa.partials.status-muted')
             </td>
             <td>
-              {{ $solicitacaoisencaotaxa->selecao->nome }} ({{ $solicitacaoisencaotaxa->selecao->categoria->nome }})
+              {{ $solicitacaoisencaotaxa->selecao->nome }}{{ $solicitacaoisencaotaxa->selecao->categoria ? ' (' . $solicitacaoisencaotaxa->selecao->categoria->nome . ')' : '' }}
             </td>
             <td class="text-right">
               <span class="d-none">{{ $solicitacaoisencaotaxa->created_at }}</span>

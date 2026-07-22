@@ -99,8 +99,8 @@ class SelecaoObserver
         $dados_a_atualizar = [];
 
         // marca para atualizar o nome
-        $selecao_nome_novo = (($selecao->categoria->nome === 'Aluno Especial') ? 'Aluno Especial' : $selecao->programa?->sigla . ' para ingresso');
-        if ($selecao->categoria->nome === 'Aluno Especial')
+        $selecao_nome_novo = (($selecao->categoria?->nome === 'Aluno Especial') ? 'Aluno Especial' : $selecao->programa?->sigla . ' para ingresso');
+        if ($selecao->categoria?->nome === 'Aluno Especial')
             $selecao_nome_novo .= ' ';
         else
             $selecao_nome_novo .= (($selecao->ingresso_semestre == 0) ? ' em ' : ' no ');

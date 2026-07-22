@@ -858,7 +858,7 @@ class Selecao extends Model
         $ret = [];
         foreach ($selecoes as $selecao)
             if (Gate::allows('selecoes.view'))
-                $ret[$selecao->id] = $selecao->nome . ' (' . $selecao->categoria->nome . ')';
+                $ret[$selecao->id] = $selecao->nome . ($selecao->categoria ? ' (' . $selecao->categoria->nome . ')' : '');
         return $ret;
     }
 
@@ -1182,7 +1182,7 @@ class Selecao extends Model
     public function fazInscricoes()
     {
         if (!$this->categoria)
-            return false;
+            return $this->programa?->fazInscricoes();    // vai depender do vínculo (a ser implementado no futuro, quando este selecoes-pos se tornar selecoes)
 
         if ($this->categoria->nome == 'Aluno Regular')
             return (bool) $this->programa?->fazInscricoes();
@@ -1195,7 +1195,7 @@ class Selecao extends Model
     public function fazMatriculas()
     {
         if (!$this->categoria)
-            return false;
+            return $this->programa?->fazMatriculas();    // vai depender do vínculo (a ser implementado no futuro, quando este selecoes-pos se tornar selecoes)
 
         if ($this->categoria->nome == 'Aluno Regular')
             return (bool) $this->programa?->fazMatriculas();

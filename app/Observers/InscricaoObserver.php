@@ -89,7 +89,7 @@ class InscricaoObserver
                 \Mail::to($user->email)
                     ->queue(new InscricaoMail(compact('passo', 'inscricao', 'user', 'arquivos', 'email_secaoinformatica')));
 
-                if ($inscricao->selecao->categoria->nome != 'Aluno Especial') {
+                if ($inscricao->selecao->categoria?->nome != 'Aluno Especial') {
                     // envia e-mail avisando a secretaria do programa da seleção da inscrição sobre a realização da inscrição
                     // envio do e-mail "10" do README.md
                     $passo = 'envio - para gestores';
@@ -121,7 +121,7 @@ class InscricaoObserver
                 // envia e-mail avisando o candidato da pré-aprovação da inscrição
                 // envio do e-mail "16" do README.md
                 $passo = 'pré-aprovação';
-                $link_acompanhamento = (($inscricao->selecao->categoria->nome == 'Aluno Especial') ? Parametro::first()->link_acompanhamento_especiais : $inscricao->selecao->programa->link_acompanhamento);
+                $link_acompanhamento = (($inscricao->selecao->categoria?->nome == 'Aluno Especial') ? Parametro::first()->link_acompanhamento_especiais : $inscricao->selecao->programa->link_acompanhamento);
                 \Mail::to($user->email)
                     ->queue(new InscricaoMail(compact('passo', 'inscricao', 'user', 'link_acompanhamento')));
 

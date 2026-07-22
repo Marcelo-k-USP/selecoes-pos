@@ -93,6 +93,11 @@ class Parametro extends Model
         return $fields;
     }
 
+    public function exigeCategoria()
+    {
+        return true;    // vai depender do vínculo (a ser implementado no futuro, quando este selecoes-pos se tornar selecoes)
+    }
+
     public function permiteInscricao()
     {
         return true;    // vai depender do vínculo (a ser implementado no futuro, quando este selecoes-pos se tornar selecoes)

@@ -46,15 +46,18 @@
         $(this).mask('00/00/0000');
       });
 
-      permite_taxa = {{ Parametro::first()->permiteTaxa() ? 'true' : 'false' }};
+      exige_categoria = {{ Parametro::first()->exigeCategoria() ? 'true' : 'false' }};
+      if (!exige_categoria)
+        $('#categoria_id').closest('.form-group').hide();
 
+      permite_taxa = {{ Parametro::first()->permiteTaxa() ? 'true' : 'false' }};
       $('#categoria_id, #programa_id').change(function () {
         if (!permite_taxa)
           $('#tem_taxa').closest('.form-group').hide();
 
         faz_inscricoes = false;
         faz_matriculas = false;
-        if (($('#categoria_id option:selected').text() !== 'Aluno Especial') && ($('#categoria_id').val() !== '')) {
+        if (($('#categoria_id option:selected').text() !== 'Aluno Especial') && (($('#categoria_id').val() !== '') || !exige_categoria)) {
           $('#programa_id').closest('.form-group').show();
           programa_id = $('#programa_id').val();
           programa = $({!! $programas !!}).filter(function(index, item) {
